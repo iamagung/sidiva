@@ -47,16 +47,14 @@ Route::post('proses_login', 'App\Http\Controllers\Login\LoginController@proses_l
 Route::get('logout', 'App\Http\Controllers\Login\LoginController@logout')->name('logout');
 // END AUTH
 Route::group(['middleware' => ['auth']], function () {
-
-    // START ADMIN
-    Route::group(['middleware' => ['cek_login:admin']], function () {
-        // DASHBOARD
+    #Admin
+    Route::group(['middleware' => ['cek_login:1']], function () {
+        #dashboard Admin
         Route::group(['prefix'=>'admin'],function(){
 			Route::get('/dashboard', [Dashboard::class, 'main'])->name('dashboard');
             Route::get('/dashboard/get-data', [Dashboard::class, 'getData'])->name('getDataDashboard');
 		});
-
-        // MCU
+        #Mcu
         Route::group(['prefix'=>'medical-check-up'],function(){
             // PERMINTAAN MCU
             Route::group(['prefix'=>'permintaan-mcu'],function(){
@@ -92,8 +90,7 @@ Route::group(['middleware' => ['auth']], function () {
                 Route::post('/save', [PengaturanMcu::class, 'store'])->name('savePengaturanMcu');
             });
         });
-
-        // HOMECARE
+        #Homecare
         Route::group(['prefix'=>'home-care'],function(){
             // PERMINTAAN HC
             Route::group(['prefix'=>'permintaan-homecare'],function(){
@@ -152,8 +149,7 @@ Route::group(['middleware' => ['auth']], function () {
                 Route::post('/save', [SyaratHC::class, 'store'])->name('saveSyaratHC');
             });
         });
-
-        // PENGGUNA
+        #Pengguna
         Route::group(['prefix'=>'pengguna'],function(){
 			Route::get('/', [Pengguna::class, 'main'])->name('mainPengguna');
             Route::post('/form', [Pengguna::class, 'form'])->name('formPengguna');
@@ -161,7 +157,28 @@ Route::group(['middleware' => ['auth']], function () {
             Route::post('/save', [Pengguna::class, 'store'])->name('savePengguna');
 		});
     });
-    // END ADMIN
+    #Admin MCU
+    Route::group(['middleware' => ['cek_login:2']], function () {
+        #Dashboard admin mcu
+        Route::group(['prefix'=>'admin-mcu'],function(){
+			Route::get('/dashboard', [Dashboard::class, 'main'])->name('dashboardMcu');
+            Route::get('/dashboard/get-data', [Dashboard::class, 'getData'])->name('getDataDashboardMcu');
+		});
+    });
+    #Admin HOMECARE
+    Route::group(['middleware' => ['cek_login:3']], function () {
+        Route::group(['prefix'=>'admin-homecare'],function(){
+			Route::get('/dashboard', [Dashboard::class, 'main'])->name('dashboardHc');
+            Route::get('/dashboard/get-data', [Dashboard::class, 'getData'])->name('getDataDashboardHc');
+		});
+    });
+    #Admin PSC
+    Route::group(['middleware' => ['cek_login:4']], function () {
+        Route::group(['prefix'=>'admin-psc'],function(){
+			Route::get('/dashboard', [Dashboard::class, 'main'])->name('dashboardPsc');
+            Route::get('/dashboard/get-data', [Dashboard::class, 'getData'])->name('getDataDashboardPsc');
+		});
+    });
 });
 Route::group(['prefix' => 'invoice'], function() {
     Route::get('/invoice_mcu/{id}', [PermintaanMcu::class, 'invoiceMcu'])->name('invoiceMcu');

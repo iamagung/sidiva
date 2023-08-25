@@ -18,8 +18,29 @@ class CreateUsersSeeder extends Seeder
             'name'=>'Admin',
             'username' => 'admin',
             'email'=> 'admin@example.com',
-            'level'=> 'admin',
+            'level'=> '1',
             'password'=> bcrypt('admin'),
+        ]);
+        User::create([
+            'name'=>'Admin MCU',
+            'username' => 'adminmcu',
+            'email'=> 'adminmcu@example.com',
+            'level'=> '2',
+            'password'=> bcrypt('adminmcu'),
+        ]);
+        User::create([
+            'name'=>'Admin Homecare',
+            'username' => 'adminhc',
+            'email'=> 'adminhomecare@example.com',
+            'level'=> '3',
+            'password'=> bcrypt('adminhc'),
+        ]);
+        User::create([
+            'name'=>'Admin PSC',
+            'username' => 'adminpsc',
+            'email'=> 'adminpsc@example.com',
+            'level'=> '4',
+            'password'=> bcrypt('adminpsc'),
         ]);
     }
 }

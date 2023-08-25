@@ -303,8 +303,18 @@
 						<a class="d-flex align-items-center nav-link dropdown-toggle dropdown-toggle-nocaret" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 							<img src="{{ asset('assets/images/avatars/avatar-9.png')}}" class="user-img" alt="user avatar">
 							<div class="user-info ps-3">
-								 <p class="user-name mb-0">{{Auth::User()->name}}</p>
-								 <p class="designattion mb-0">{{Auth::User()->level}}</p>
+								<p class="user-name mb-0">{{Auth::User()->name}}</p>
+								<p class="designattion mb-0">
+									@if (Auth::User()->level=='1')
+										Administrator
+									@elseif (Auth::User()->level=='2')
+										Admin MCU
+									@elseif (Auth::User()->level=='3')
+										Admin HOMECARE
+									@elseif (Auth::User()->level=='4')
+										Admin PSC
+									@endif
+								</p>
 							</div>
 					  </a>
 					  <ul class="dropdown-menu dropdown-menu-end">
