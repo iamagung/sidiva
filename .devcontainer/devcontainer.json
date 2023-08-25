@@ -1,0 +1,28 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/php
+{
+   "name": "SIDIVA", // Container name
+   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+   "dockerComposeFile": "../docker-compose.yml",
+   "service": "sidiva",
+   "workspaceFolder": "/var/www/html",
+
+   // Configure tool-specific properties.
+   "customizations": {
+      // Configure properties specific to VS Code.
+      "vscode": {
+         "extensions": [
+            // "streetsidesoftware.code-spell-checker",
+            "onecentlin.laravel-extension-pack",
+            "ms-azuretools.vscode-docker",
+            "adpyke.codesnap"
+         ]
+      }
+   },
+
+   // Use 'postCreateCommand' to run commands after the container is created.
+   // "postCreateCommand": "bash -i .devcontainer/postCreateCommand.sh",
+
+   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+   "remoteUser": "devcon"
+}

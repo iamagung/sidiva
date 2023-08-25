@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  sidiva:
+    image: php:8.1-dwialim
+    container_name: sidiva
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: always
+    ports:
+      - '${APP_PORT:-80}:80'
+    environment:
+      WWWUSER: '${WWWUSER}'
+      LARAVEL_SAIL: 1
+      XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+      XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+      IGNITION_LOCAL_SITES_PATH: '${PWD}'
+    volumes:
+      - '.:/var/www/html'
+    networks:
+      - core_core-network
+
+networks:
+  core_core-network:
+    external: true
