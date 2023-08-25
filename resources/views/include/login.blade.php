@@ -24,7 +24,8 @@
 	<style>
 		.bg-login {
 			/* background: linear-gradient(119.65deg, #3EC396 31.86%, #59B596 95.51%); */
-			background: linear-gradient(151deg, #C96AF6 0%, #EB20BE 100%);
+			/* background: linear-gradient(151deg, #C96AF6 0%, #EB20BE 100%); */
+			background: linear-gradient(151deg, #cc8dea 0%, #601b8b 100%);
 		}
 	</style>
 </head>
