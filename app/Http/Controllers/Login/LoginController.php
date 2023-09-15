@@ -25,7 +25,7 @@ class LoginController extends Controller
         return view('include/login');
     }
 
-    public function proses_login(Request $request)
+    public function prosesLogin(Request $request)
     {
         request()->validate(
             [
@@ -36,13 +36,13 @@ class LoginController extends Controller
             $kredensil = $request->only('username','password');
             if (Auth::attempt($kredensil)) {
                 $user = Auth::user();
-                if ($user->level == '1') { #admin
+                if ($user->level == 'admin') { #admin
                     return redirect()->route('dashboard');
-                } else if($user->level == '2') {#Admin mcu
+                } else if($user->level == 'adminmcu') {#Admin mcu
                     return redirect()->route('dashboardMcu');
-                } else if($user->level == '3') {#Admin homecare
-                    return redirect()->route('dashboardHc');
-                } else if($user->level == '4') {#Admin psc
+                } else if($user->level == 'adminhomecare') {#Admin homecare
+                    return redirect()->route('dashboardHomecare');
+                } else if($user->level == 'admintelemedis') {#Admin telemedicine
                     return redirect()->route('dashboardPsc');
                 }
                 return redirect()->route('/');

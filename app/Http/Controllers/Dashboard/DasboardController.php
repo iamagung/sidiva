@@ -10,19 +10,13 @@ use Carbon\Carbon;
 
 class DasboardController extends Controller
 {
-    function __construct()
-	{
-		$this->title = 'Dashboard';
-        $this->menu = 'dashboard';
-	}
-
+    # Start admin
     public function main()
     {
-        $data['title'] = $this->title;
-        $data['menu'] = $this->menu;
+        $data['title'] = 'Dashboard';
+        $data['menu'] = 'dashboard';
         return view('admin.dashboard.main', $data);
     }
-
     public function getData()
     {
         $today = date('Y-m-d');
@@ -91,5 +85,37 @@ class DasboardController extends Controller
         }
         # end
         return ['code' => 200, 'status' => 'success', 'message' => 'Berhasil', 'data' => $data];
-    }       
+    }
+    # End admin
+    # STart homecare
+    public function mainHomecare() {
+        $data['title'] = 'Dashboard Homecare';
+        $data['menu'] = 'dashboardHomecare';
+        return view('admin.dashboard.homecare', $data);
+    }
+    public function getDataHomecare()
+    {
+        $today = date('Y-m-d');
+        $monthNow = date('m');
+        $yearNow = date('Y');
+        $monthPrev = now()->subMonth()->format('m');
+        $yearPrev = now()->subMonth()->format('Y');
+        $data['ttlPermintaanHC']   = PermintaanHC::where('tanggal_kunjungan', $today)->count();
+        #1 Start calculate presentase permintaan HC bulan ini dengan bulan kemaren
+        $getHcNowMonth  = PermintaanHC::whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
+        $getHcPrevMonth  = PermintaanHC::whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
+        if ($getHcNowMonth > 0 && $getHcPrevMonth > 0) {
+            $percentPermintaanHC = round((($getHcNowMonth-$getHcPrevMonth)/$getHcNowMonth)*100);
+            if (substr($percentPermintaanHC, 0,1) == '-' || $percentPermintaanHC == 0) {
+                $data['diffPermintaanHC'] = "$percentPermintaanHC%";
+            } else {
+                $data['diffPermintaanHC'] = "+$percentPermintaanHC%";
+            }
+        } else {
+            $data['diffPermintaanHC'] = "+0%";
+        }
+        # end
+        return ['code' => 200, 'status' => 'success', 'message' => 'Berhasil', 'data' => $data];
+    }
+    # End Homecare
 }

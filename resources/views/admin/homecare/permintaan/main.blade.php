@@ -24,7 +24,18 @@
         <div class="card-body">
             <div class="row" style="margin-top: 2rem">
                 <div class="col-md-4"></div>
-                <div class="col-md-4"></div>
+                <div class="col-md-2"></div>
+                <div class="col-md-2">
+                    <label>Status</label>
+                    <select name="status" id="status" class="form-control">
+                        <option value="">-Pilih-</option>
+                        <option value="all">Semua</option>
+                        <option value="belum" selected>Belum</option>
+                        <option value="proses">Proses</option>
+                        <option value="batal">Batal</option>
+                        <option value="selesai">Selesai</option>
+                    </select>
+                </div>
                 <div class="col-md-4">
                     <label>Tanggal Homecare</label>
                     <input type="date" id="tanggal" class="form-control">
@@ -75,12 +86,13 @@
 
         var today = year + "-" + month + "-" + day ;
         $("#tanggal").attr("value", today);
-
-        loadTable(today);
+        var status = $('#status').val();
+        loadTable(today,status);
         filterByDate();
+        filterByStatus();
 	});
 
-    function loadTable(tanggal = null){
+    function loadTable(tanggal=null, status=null){
         var table = $('#datatabel').DataTable({
             scrollX: true,
             searching: true,
@@ -99,7 +111,8 @@
             ajax: {
                 url: "{{route('mainPermintaanHC')}}",
                 data: {
-                    tanggal : tanggal
+                    tanggal : tanggal,
+                    status : status
                 }
             },
             columns: [
@@ -120,10 +133,16 @@
         $("#tanggal").change(function (e) {
             e.preventDefault();
             $('#datatabel').DataTable().destroy();
-            loadTable( $("#tanggal").val() );
+            loadTable($("#tanggal").val(), $("#status").val());
         });
     }
-
+    function filterByStatus() {
+        $("#status").change(function (e) {
+            e.preventDefault();
+            $('#datatabel').DataTable().destroy();
+            loadTable($("#tanggal").val(), $("#status").val());
+        });
+    }
     function formAdd(id) {
         $('.main-layer').hide();
         $.post("{{route('formPermintaanHC')}}", {id:id})

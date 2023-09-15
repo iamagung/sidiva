@@ -11,4 +11,5 @@ class TmCustomer extends Model
     protected $connection = 'dbrsud';
     protected $table = 'tm_customer';
     protected $primaryKey = "KodeCust";
+    public $timestamps = false;
 }

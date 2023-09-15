@@ -20,7 +20,7 @@
 	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 	<link href="{{ asset('assets/css/app.css')}}" rel="stylesheet">
 	<link href="{{ asset('assets/css/icons.css')}}" rel="stylesheet">
-	<title>MCU - RSUWAHIDIN</title>
+	<title>SIDIVA - RSUWAHIDIN</title>
 	<style>
 		.bg-login {
 			/* background: linear-gradient(119.65deg, #3EC396 31.86%, #59B596 95.51%); */

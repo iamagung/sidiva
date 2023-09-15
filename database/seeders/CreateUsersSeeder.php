@@ -18,29 +18,37 @@ class CreateUsersSeeder extends Seeder
             'name'=>'Admin',
             'username' => 'admin',
             'email'=> 'admin@example.com',
-            'level'=> '1',
+            'level'=> 'admin',
             'password'=> bcrypt('admin'),
+            'lihat_password'=> 'admin',
+            'telepon'=> '08100000000000'
         ]);
         User::create([
             'name'=>'Admin MCU',
             'username' => 'adminmcu',
             'email'=> 'adminmcu@example.com',
-            'level'=> '2',
+            'level'=> 'adminmcu',
             'password'=> bcrypt('adminmcu'),
+            'lihat_password'=> 'adminmcu',
+            'telepon'=> '08100000000000'
         ]);
         User::create([
             'name'=>'Admin Homecare',
-            'username' => 'adminhc',
+            'username' => 'adminhomecare',
             'email'=> 'adminhomecare@example.com',
-            'level'=> '3',
-            'password'=> bcrypt('adminhc'),
+            'level'=> 'adminhomecare',
+            'password'=> bcrypt('adminhomecare'),
+            'lihat_password'=> 'adminhomecare',
+            'telepon'=> '08100000000000'
         ]);
         User::create([
-            'name'=>'Admin PSC',
-            'username' => 'adminpsc',
-            'email'=> 'adminpsc@example.com',
-            'level'=> '4',
-            'password'=> bcrypt('adminpsc'),
+            'name'=>'Admin Telemedicine',
+            'username' => 'admintelemedis',
+            'email'=> 'admintelemedis@example.com',
+            'level'=> 'admintelemedis',
+            'password'=> bcrypt('admintelemedis'),
+            'lihat_password'=> 'admintelemedis',
+            'telepon'=> '08100000000000'
         ]);
     }
 }

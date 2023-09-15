@@ -160,6 +160,7 @@ class ApiPendaftaranHcController extends Controller
 
     public function pesanJadwalHC(Request $request)
     {
+        return 'test';
         if ($request->no_rm == "") {
             $validate = Validator::make($request->all(),[
                 'layanan_id' => 'required',

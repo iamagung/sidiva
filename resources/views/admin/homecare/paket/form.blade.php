@@ -14,7 +14,12 @@ function rupiah($angka){
             <div class="card-body">
                 <div class="row mb-3">
                     <input type="hidden" name="id" id="id" value="{{ !empty($layanan->id_paket_hc) ? $layanan->id_paket_hc : ''}}">
-                    <div class="col-4">
+                    <div class="col-md-3">
+                        <label>Nama Layanan <small>*)</small></label>
+                        <input type="text" name="nama_layanan" id="nama_layanan" class="form-control" placeholder="Nama Layanan"
+                        value="{{ !empty($layanan->nama_paket) ? $layanan->nama_paket : ''}}" autocomplete="off">
+                    </div>
+                    <div class="col-md-3">
                         <label>Kategori Layanan <small>*)</small></label>
                         <select name="kategori_layanan" id="kategori_layanan" class="form-control">
                             <option value="">- Pilih -</option>
@@ -22,19 +27,12 @@ function rupiah($angka){
                             <option @if(isset($layanan->jenis_layanan) && $layanan->jenis_layanan == 'Paket') selected @endif value="Paket">Paket</option>
                         </select>
                     </div>
-                    <div class="col-4">
-                        <label>Nama Layanan <small>*)</small></label>
-                        <input type="text" name="nama_layanan" id="nama_layanan" class="form-control" placeholder="Nama Layanan"
-                        value="{{ !empty($layanan->nama_paket) ? $layanan->nama_paket : ''}}" autocomplete="off">
-                    </div>
-                    <div class="col-4">
+                    <div class="col-md-3">
                         <label>Harga / Biaya <small>*)</small></label>
                         <input type="text" name="harga" id="harga" class="form-control" placeholder="Rp." onkeyup="ubahFormat(this)"
                         value="{{!empty($layanan->harga) ? rupiah($layanan->harga) : ''}}" autocomplete="off">
                     </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-4">
+                    <div class="col-md-3">
                         <label>Jumlah Hari Layanan <small>*)</small></label>
                         <input type="number" name="jumlah_hari" id="jumlah_hari" class="form-control" placeholder="0"
                         value="{{ !empty($layanan->jumlah_hari) ? $layanan->jumlah_hari : ''}}" autocomplete="off">
@@ -43,7 +41,7 @@ function rupiah($angka){
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <label>Deskripsi <small>*)</small></label><br>
-                        <textarea name="deskripsi" id="deskripsi" cols="90" rows="10" placeholder="Deskripsi" class="form-control" autocomplete="off">{{!empty($layanan->deskripsi) ? $layanan->deskripsi:''}}</textarea>
+                        <textarea name="deskripsi" id="editor1" cols="90" rows="10" placeholder="Deskripsi" class="form-control" autocomplete="off">{{!empty($layanan->deskripsi) ? $layanan->deskripsi:''}}</textarea>
                     </div>
                 </div>
             </div>
@@ -60,45 +58,58 @@ function rupiah($angka){
 </div>
 
 <script type="text/javascript">
+    var editor = CKEDITOR.replace('editor1', {
+		toolbarCanCollapse:false,
+	});
     $('#simpan').click(function (e) { 
         e.preventDefault();
         var data = new FormData($("#form-data")[0]);
-
-        $.ajax({
-            url : "{{route('savePaketHC')}}",
-            type: 'POST',
-            data: data,
-            async: true,
-            cache: false,
-            contentType: false,
-            processData: false
-        }).done(function(data) {
-            if (data.status == 'success') {
-                Swal.fire('Berhasil', data.message, 'success');
-                location.reload();
-            } else if(data.status == 'error'){
-                if(data.code == 500){
-                    $('#simpan').removeAttr('disabled');
-                    Swal.fire('Maaf!', data.message, 'info');
-                } else {
-                    var n = 0
-                    for(key in data.message){
-                        var  name = key
-                        if(name=='deskripsi'){name='Deskripsi'}
-                        else if(name=='harga'){name='Harga'}
-                        else if(name=='nama_layanan'){name='Nama Layanan'}
-                        else if(name=='kategori_layanan'){name='Kategori Pelayanan'}
-                        n++
+        var deskripsi = CKEDITOR.instances.editor1.getData();
+            data.append('deskripsi',deskripsi);
+        if (!deskripsi) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Whoops..',
+                text: 'Deskripsi Wajib Diisi',
+                showConfirmButton: false,
+                timer: 1300,
+            })
+        } else {
+            $.ajax({
+                url : "{{route('savePaketHC')}}",
+                type: 'POST',
+                data: data,
+                async: true,
+                cache: false,
+                contentType: false,
+                processData: false
+            }).done(function(data) {
+                if (data.status == 'success') {
+                    Swal.fire('Berhasil', data.message, 'success');
+                    location.reload();
+                } else if(data.status == 'error'){
+                    if(data.code == 500){
+                        $('#simpan').removeAttr('disabled');
+                        Swal.fire('Maaf!', data.message, 'info');
+                    } else {
+                        var n = 0
+                        for(key in data.message){
+                            var  name = key
+                            if(name=='harga'){name='Harga'}
+                            else if(name=='nama_layanan'){name='Nama Layanan'}
+                            else if(name=='kategori_layanan'){name='Kategori Pelayanan'}
+                            n++
+                        }
+                        
+                        $('#simpan').removeAttr('disabled');
+                        Swal.fire('Maaf!', name+' Wajib Diisi', 'info');
                     }
-                    
-                    $('#simpan').removeAttr('disabled');
-                    Swal.fire('Maaf!', name+' Wajib Diisi', 'info');
                 }
-            }
-        }).fail(function() {
-            Swal.fire("MAAF!", "Terjadi Kesalahan, Silahkan Ulangi Kembali !!", "warning");
-            $('#simpan').removeAttr('disabled');
-        });  
+            }).fail(function() {
+                Swal.fire("MAAF!", "Terjadi Kesalahan, Silahkan Ulangi Kembali !!", "warning");
+                $('#simpan').removeAttr('disabled');
+            }); 
+        } 
     });
 
     function ubahFormat(val){

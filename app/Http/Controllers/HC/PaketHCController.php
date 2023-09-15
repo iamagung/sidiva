@@ -15,7 +15,7 @@ class PaketHCController extends Controller
 		$this->title = 'Paket Home Care';
 	}
 
-    public function main()
+    public function main(Request $request)
     {
         if(request()->ajax()){
             $data = PaketHC::orderBy('id_paket_hc','DESC')->get();
@@ -30,6 +30,9 @@ class PaketHCController extends Controller
 				})
                 ->addColumn('formatHarga', function($row){
 					return $format = "Rp.".number_format($row->harga,0,',','.');
+				})
+                ->addColumn('desc', function($row){
+					return $row->deskripsi;
 				})
 				->rawColumns(['actions'])
 				->toJson();
@@ -54,7 +57,6 @@ class PaketHCController extends Controller
     public function store(Request $request)
     {
         $rules = array(
-            'deskripsi' => 'required',
             'harga' => 'required',
             'nama_layanan' => 'required',
             'kategori_layanan' => 'required',

@@ -21,9 +21,19 @@ class PermintaanHCController extends Controller
     public function main(Request $request)
     {
         if(request()->ajax()){
-            $data = PermintaanHC::where('tanggal_kunjungan', $request->tanggal)
-                ->where('status_pasien', '!=', 'batal')
-                ->orderBy('created_at','ASC')->get();
+            if (!empty($request->tanggal) && !empty($request->status)) {
+                if ($request->status=='all') {
+                    $data = PermintaanHC::where('tanggal_kunjungan', $request->tanggal)
+                    ->whereIn('status_pasien', ['belum','proses','batal','selesai'])
+                    ->orderBy('created_at','ASC')->get();
+                } else {
+                    $data = PermintaanHC::where('tanggal_kunjungan', $request->tanggal)
+                    ->where('status_pasien', $request->status)
+                    ->orderBy('created_at','ASC')->get();
+                }
+            } else {
+                $data = PermintaanHC::orderBy('created_at','ASC')->get();
+            }
 			return DataTables::of($data)
 				->addIndexColumn()
                 ->addColumn('proses', function($row){

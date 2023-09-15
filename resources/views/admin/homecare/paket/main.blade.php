@@ -83,7 +83,7 @@
                 { data: "DT_RowIndex", name: "DT_RowIndex"},
                 { data: "jenis_layanan", name: "jenis_layanan"},
                 { data: "nama_paket", name: "nama_paket"},
-                { data: "deskripsi", name: "deskripsi"},
+                { data: "desc", name: "desc"},
                 { data: "formatHarga", name: "formatHarga"},
                 { data: "actions", name: "actions", class: "text-center"},
             ],

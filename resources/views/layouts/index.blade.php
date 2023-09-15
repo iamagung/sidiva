@@ -5,7 +5,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="csrf-token" content="{{csrf_token()}}"> <!--csrfToken-->
-	<title>MCU - RSUWAHIDIN</title>
+	<title>SIDIVA - RSUWAHIDIN</title>
     @include('include.style') <!--importCSS-->
     <style>
         html.color-header .topbar-logo-header .logo-icon {

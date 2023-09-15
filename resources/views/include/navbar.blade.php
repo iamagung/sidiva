@@ -310,15 +310,15 @@
 									@elseif (Auth::User()->level=='2')
 										Admin MCU
 									@elseif (Auth::User()->level=='3')
-										Admin HOMECARE
+										Admin Home Care
 									@elseif (Auth::User()->level=='4')
-										Admin PSC
+										Admin Telemedis
 									@endif
 								</p>
 							</div>
 					  </a>
 					  <ul class="dropdown-menu dropdown-menu-end">
-							<li>
+							{{-- <li>
 								 <a class="dropdown-item" href="javascript:;"><i class="bx bx-user"></i><span>Profile</span></a>
 							</li>
 							<li>
@@ -326,7 +326,7 @@
 							</li>
 							<li>
 								 <div class="dropdown-divider mb-0"></div>
-							</li>
+							</li> --}}
 							<li>
 								 <a class="dropdown-item" href="{{ Route('logout')}}"><i class='bx bx-log-out-circle'></i><span>Logout</span></a>
 							</li>
@@ -339,95 +339,87 @@
 
 	 <!--start navigation-->
 	 <div class="nav-container">
-		  <!-- logo tampilan resposif mobile -->
-		  <div class="mobile-topbar-header">
-				<div>
-                    <img src="{{ asset('assets/images/logo-rsu.png')}}" class="logo-icon" alt="logo icon">
-				</div>
-				<div>
-                    <h4 class="logo-text">MCU</h4>
-				</div>
-				<div class="toggle-icon ms-auto">
-                    <i class='bx bx-arrow-to-left'></i>
-				</div>
-		  </div>
-		  <!-- main menu -->
-		  <nav class="topbar-nav">
+		<!-- logo tampilan resposif mobile -->
+		<div class="mobile-topbar-header">
+			<div>
+				<img src="{{ asset('assets/images/logo-rsu.png')}}" class="logo-icon" alt="logo icon">
+			</div>
+			<div>
+				<h4 class="logo-text">MCU</h4>
+			</div>
+			<div class="toggle-icon ms-auto">
+				<i class='bx bx-arrow-to-left'></i>
+			</div>
+		</div>
+		<!-- main menu -->
+		<nav class="topbar-nav">
 			<ul class="metismenu" id="menu">
-                <li>
-                    <a href="{{ Route('dashboard')}}">
-                        <div class="parent-icon text-white"><i class='bx bx-home'></i>
-                        </div>
-                        <div class="menu-title">Dashboard</div>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:;" class="has-arrow text-white">
-                        <div class="parent-icon text-white"><i class="bx bx-first-aid"></i>
-                        </div>
-                        <div class="menu-title">Homecare</div>
-                    </a>
-                    <ul>
-                        <li>
-                            <a href="{{ route('mainPermintaanHC')}}"><i class="bx bx-right-arrow-alt"></i>Permintaan Baru</a>
-                        </li>
-                        <li>
-                            <a href="{{ route('mainRiwayatHC')}}"><i class="bx bx-right-arrow-alt"></i>Riwayat Home Care</a>
-                        </li>
-                        <li>
-                            {{-- <a href="{{ route('indexLayananHC')}}"><i class="bx bx-right-arrow-alt"></i>Jenis Layanan</a> --}}
-							<a href="{{ route('mainLayananHC')}}"><i class="bx bx-right-arrow-alt"></i>Jenis Layanan</a>
-                        </li>
-                        <li>
-                            <a href="{{ route('mainPaketHC')}}"><i class="bx bx-right-arrow-alt"></i>Paket Home Care</a>
-                        </li>
-                        <li>
-                            <a href="{{ route('mainTenagaMedis')}}"><i class="bx bx-right-arrow-alt"></i>Tenaga Medis</a>
-                        </li>
-						<li>
-                            <a href="{{ route('formPengaturanHC')}}"><i class="bx bx-right-arrow-alt"></i>Pengaturan</a>
-                        </li>
-						<li>
-                            <a href="{{ route('mainSyaratHC')}}"><i class="bx bx-right-arrow-alt"></i>Syarat & Aturan</a>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="javascript:void(0)" class="has-arrow text-white">
-                        <div class="parent-icon text-white"><i class="bx bx-first-aid"></i>
-                        </div>
-                        <div class="menu-title">Medical Check Up</div>
-                    </a>
-                    <ul>
-                        <li>
-                            <a href="{{ Route('mainPermintaanMcu')}}"><i class="bx bx-right-arrow-alt"></i>Permintaan MCU</a>
-                        </li>
-                        <li>
-                            <a href="{{ Route('mainRiwayatMcu')}}"><i class="bx bx-right-arrow-alt"></i>Riwayat MCU</a>
-                        </li>
-                        <li>
-                            <a href="{{ Route('mainLayananMcu')}}"><i class="bx bx-right-arrow-alt"></i>Layanan MCU</a>
-                        </li>
-						<li>
-                            <a href="{{ route('formPengaturanMCU')}}"><i class="bx bx-right-arrow-alt"></i>Pengaturan</a>
-                        </li>
-						<li>
-                            <a href="{{ route('mainSyaratMcu')}}"><i class="bx bx-right-arrow-alt"></i>Syarat & Aturan</a>
-                        </li>
-                    </ul>
-                </li>
-				<li>
-                    <a href="{{ Route('mainPengguna')}}">
-                        <div class="parent-icon text-white"><i class='bx bxs-user'></i></i>
-                        </div>
-                        <div class="menu-title">User TM</div>
-                    </a>
-                </li>
+				@if(Auth::User()->level=='1') <!-- Admin Aplikasi -->
+					<li>
+						<a href="{{ Route('dashboard')}}">
+							<div class="parent-icon text-white"><i class='bx bx-home'></i>
+							</div>
+							<div class="menu-title">Dashboard</div>
+						</a>
+					</li>
+					@include('include.navbar.homecare')
+					@include('include.navbar.telemedicine')
+					@include('include.navbar.mcu')
+					@include('include.navbar.psc')
+					<li>
+						<a href="{{ Route('mainPengguna')}}">
+							<div class="parent-icon text-white"><i class='bx bxs-user'></i></i>
+							</div>
+							<div class="menu-title">Data Pengguna</div>
+						</a>
+					</li>
+					<li>
+						<a href="{{ Route('mainLaporanLayanan')}}">
+							<div class="parent-icon text-white"><i class='bx bxs-user'></i></i>
+							</div>
+							<div class="menu-title">Laporan Layanan</div>
+						</a>
+					</li>
+					<li>
+						<a href="{{ Route('mainLaporanKeuangan')}}">
+							<div class="parent-icon text-white"><i class='bx bxs-user'></i></i>
+							</div>
+							<div class="menu-title">Laporan Keuangan</div>
+						</a>
+					</li>
+				@elseif(Auth::User()->level=='2') <!-- Admin MCU -->
+					<li>
+						<a href="{{ Route('dashboardMcu')}}">
+							<div class="parent-icon text-white"><i class='bx bx-home'></i>
+							</div>
+							<div class="menu-title">Dashboard</div>
+						</a>
+					</li>
+					@include('include.navbar.mcu')
+				@elseif(Auth::User()->level=='3') <!-- Admin Homecare -->
+					<li>
+						<a href="{{ Route('dashboardHomecare')}}">
+							<div class="parent-icon text-white"><i class='bx bx-home'></i>
+							</div>
+							<div class="menu-title">Dashboard</div>
+						</a>
+					</li>
+					@include('include.navbar.homecare')
+				@else <!-- Admin Telemedis -->	
+					<li>
+						<a href="{{ Route('dashboardTelemedicine')}}">
+							<div class="parent-icon text-white"><i class='bx bx-home'></i>
+							</div>
+							<div class="menu-title">Dashboard</div>
+						</a>
+					</li>
+					@include('include.navbar.telemedicine')
+				@endif
 			</ul>
-	  </nav>
-		  <!-- /main menu -->
-	 </div>
-	 <!-- !navigation -->
+		</nav>
+		<!-- /main menu -->
+	</div>
+	<!-- !navigation -->
 
 </div>
 <!--end header wrapper-->

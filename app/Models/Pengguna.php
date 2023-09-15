@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Pengguna extends Model
 {
     use HasFactory;
-    protected $connection = 'dbapm';
+    // protected $connection = 'dbapm';
     protected $table = 'users';
     protected $primaryKey = "id";
 }

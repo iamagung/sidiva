@@ -19,12 +19,12 @@
     <!-- main content -->
     <div class="card main-layer">
         <div class="card-header">
-            <h5>{{$title}} Tenaga Medis</h5>
+            <h5>Data Pengguna</h5>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-3">
-                    <button type="button" class="btn btn-sm" style="background: #4E5FBC; color: #ffffff;" onclick="formAdd()"><i class="bx bxs-plus-square"></i> Tambah User</button>
+                    <button type="button" class="btn btn-sm" style="background: #4E5FBC; color: #ffffff;" onclick="formAdd()"><i class="bx bxs-plus-square"></i> Tambah Pengguna</button>
                 </div>
                 <div class="col-md-3"></div>
                 <div class="col-md-3"></div>
@@ -37,9 +37,10 @@
                         <thead>
                             <tr>
                                 <td>No</td>
+                                <td>Nama Pengguna</td>
+                                <td>No. Telepon</td>
+                                <td>Level Pengguna</td>
                                 <td>Username</td>
-                                <td>Nama Dokter</td>
-                                <td>Nama Poli</td>
                                 <td>Opsi</td>
                             </tr>
                         </thead>
@@ -50,7 +51,7 @@
             </div>
         </div>
     </div>
-    <div class="other-page"></div>
+    <div id="modalForm"></div>
 </div>
 @endsection
 
@@ -85,28 +86,19 @@
             },
             columns: [
                 { data: "DT_RowIndex", name: "DT_RowIndex"},
-                { data: "email", name: "email"},
-                { data: "name_user", name: "name_user"},
-                { data: "poli", name: "poli"},
+                { data: "name", name: "name"},
+                { data: "telepon", name: "telepon"},
+                { data: "lvl", name: "lvl"},
+                { data: "username", name: "username"},
                 { data: "actions", name: "actions", class: "text-center"},
             ],
         })
     }
 
     function formAdd(id='') {
-        $('.main-layer').hide();
-        $.post("{{route('formPengguna')}}", {id:id})
-        .done(function(data){
-			if(data.status == 'success'){
-				$('.other-page').html(data.content).fadeIn();
-			} else {
-				$('.main-layer').show();
-			}
-		})
-        .fail(() => {
-            $('.other-page').empty();
-            $('.main-layer').show();
-        })
+        $.post("{{route('formPengguna')}}",{id:id},function(data){
+			$("#modalForm").html(data.content);
+		});
     }
 
     function hapus(id) {
@@ -137,7 +129,7 @@
     }
 
     function hideForm(){
-        $('.other-page').empty()
+        $('#modalForm').hide()
         $('.main-layer').show()
     }
 </script>

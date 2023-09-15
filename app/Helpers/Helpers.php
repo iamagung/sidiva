@@ -4,6 +4,7 @@ namespace App\Helpers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Firebase\JWT\JWT;
+use App\Models\User;
 class Helpers{
 	public static function dateIndo($param,$request='tanggal'){
 		$bulan = [
@@ -166,7 +167,106 @@ class Helpers{
         $return = intval($kilometers);
         return $return;
     }
+	# Check Regist Pasien
+	public static function checkRegistPasien($checkBy, $param) {
+		if ($checkBy=='nik') {
+			$user=User::where('username',$param)->first();
+		}else{
+			$user=User::where('telepon',$param)->first();
+		}
+		return $user;
+	}
+	# Text Berhasil Send OTP
+	public static function textSendOtp($otp){
+		$text = "Kode OTP anda adalah *$otp*";
+		return $text;
+	}
+	# Message send otp
+	public static function messageSenderOtp($params){
+		$prepareMessage = [[ # Array 2 dimensi
+			'phone' => $params->phone,
+			'message' => $params->message,
+		]];
+		if(isset($params->toAdmin) && $params->toAdmin === true){ # toAdmin === true >> gagal kirim pesan ke pasien, jadi kirimkan ke admin
+			$prepareMessage[0]['phone'] = config('webhook.phone'); # Replace nomor pasien jadi nomor admin
+			if(count($nomorAdmin = ChatBotReport::limit(5)->get()) > 0){ # Jika $nomorAdmin ada, replace value $prepareMessage
+				$prepareMessage = []; # Set value jadi array kosong
+				foreach($nomorAdmin as $key => $val){
+					$forPush = [
+						'phone' => $val->phone,
+						'message' => $params->message,
+					];
+					array_push($prepareMessage,$forPush);
+				}
+			}
+		}
+		$payload = [
+			'payload' => ["data" => $prepareMessage],
+			'token' => config('webhook.key'),
+			'url' => config('webhook.send.type.message'),
+		];
+		return Requestor::sendMultipleChat($payload); # Send message to admin
+	}
+	# Prepare message for SYSTEM ERROR
+	public static function sendErrorSystemToAdmin($params = []){
+		date_default_timezone_set('Asia/Jakarta');
+		try{
+			$title = isset($params['title']) ? strtoupper($params['title']) : 'SYSTEM ERROR';
+			$text = "*$title*";
+			$text .= "\n*DATE :* _".date('d-m-Y')."_";
+			$text .= "\n*TIME :* _".date('H:i:s')."_";
 
+			$message = isset($params['message']) ? $params['message'] : 'Terjadi kesalahan sistem';
+			$arrKeys = ['url','file','line','message','data'];
+			foreach($arrKeys as $key => $val){
+				if(isset($params[$val])){
+					$upper = strtoupper($val);
+					if($val=='data'){
+						$text .= "\n*$upper :* ".json_encode($params[$val],JSON_PRETTY_PRINT);
+					}else if($val=='message'){
+						$text .= "\n*$upper :* _".$message."_";
+					}else{
+						$text .= "\n*$upper :* _".$params[$val]."_";
+					}
+				}
+			}
+			return self::messageSenderError(['message' => $text]);
+		}catch(\Throwable $e){
+			$arrLog = [
+				'title'   => 'FAILED PREPARE MESSAGE FOR SYSTEM ERROR',
+				'url'     => request()->url(),
+				'file'    => $e->getFile(),
+				'line'    => $e->getLine(),
+				'message' => $e->getMessage(),
+			];
+			Helpers::logging($arrLog); # Log info
+		}
+	}
+	# Message send error otp
+	public static function messageSenderError($params = []){
+		$phone = config('webhook.phone'); # Nomor admin get from ENV
+		$text = isset($params['message']) ? $params['message'] : "_Terjadi kesalahan sistem_";
+		$prepareMessage = [[ # Array 2 dimensi
+			'phone' => $phone,
+			'message' => $text,
+		]];
+		if(count($nomorAdmin = ChatBotReport::limit(5)->get()) > 0){ # Jika $nomorAdmin ada, replace value $prepareMessage
+			$prepareMessage = []; # Set value jadi array kosong
+			foreach($nomorAdmin as $key => $val){
+				$forPush = [
+					'phone' => $val->phone,
+					'message' => $text,
+				];
+				array_push($prepareMessage,$forPush);
+			}
+		}
+		$payload = [
+			'payload' => ["data" => $prepareMessage],
+			'token' => config('webhook.key'),
+			'url' => config('webhook.send.type.message'),
+		];
+		return Requestor::sendMultipleChat($payload); # Send message to admin
+	}
 	# Custom response start
 	public static function resInternal($msg,$code=500,$data=[]){ # Template rest internal
 		return response()->json([

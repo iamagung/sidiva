@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\ApiAuthController as ApiAuth;
 use App\Http\Controllers\API\ApiPendaftaranMcuController as ApiPendaftaranMcu;
 use App\Http\Controllers\API\ApiPendaftaranHcController as ApiPendaftaranHC;
 use App\Http\Controllers\API\ApiRealtimecostController as ApiRealTimeCost;
@@ -20,7 +21,10 @@ use App\Http\Controllers\API\ApiRealtimecostController as ApiRealTimeCost;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
+Route::group(array('prefix' => 'auth'), function(){
+    Route::post('/register', [ApiAuth::class, 'registerPasien']);
+    Route::post('/sendotp', [ApiAuth::class, 'sendOtp']);
+});
 Route::group(array('prefix' => 'pendaftaran-mcu'), function(){
     Route::get('/get_layanan_mcu/{param}', [ApiPendaftaranMcu::class, 'getLayananMcu']);
     Route::get('/get_syarat_aturan', [ApiPendaftaranMcu::class, 'getSyaratAturan']);
@@ -36,7 +40,7 @@ Route::group(array('prefix' => 'pendaftaran-mcu'), function(){
     Route::post('/process_transaksi_mcu', [ApiPendaftaranMcu::class, 'transaksiProcessMCU']);
     Route::post('/callback_mcu', [ApiPendaftaranMcu::class, 'callbackMCU']);
 });
-
+# Start Homecare
 Route::group(array('prefix' => 'pendaftaran-hc'), function(){
     Route::get('/get_layanan_hc', [ApiPendaftaranHC::class, 'getLayananHC']);
     Route::get('/get_paket_hc', [ApiPendaftaranHC::class, 'getPaketHC']);
@@ -53,7 +57,7 @@ Route::group(array('prefix' => 'pendaftaran-hc'), function(){
     Route::post('/process_transaksi_hc', [ApiPendaftaranMcu::class, 'transaksiProcessHC']);
     Route::post('/callback_hc', [ApiPendaftaranMcu::class, 'callbackHC']);
 });
-
+# End Homecare
 // Route::group(array('prefix' => 'realtime-cost'), function(){
 //     Route::get('/get_rtc_umum', [ApiRealTimeCost::class, 'getRealtimeUmum']);
 // });
