@@ -9,6 +9,13 @@ use App\Http\Controllers\MCU\PermintaanMcuController as PermintaanMcu;
 use App\Http\Controllers\MCU\RiwayatMcuController as RiwayatMcu;
 use App\Http\Controllers\MCU\PengaturanMcuController as PengaturanMcu;
 use App\Http\Controllers\MCU\SyaratMcuController as SyaratMcu;
+use App\Http\Controllers\Psc\PermintaanPscController as PermintaanPsc;
+use App\Http\Controllers\Psc\RiwayatPscController as RiwayatPsc;
+use App\Http\Controllers\Psc\LayananPscController as LayananPsc;
+use App\Http\Controllers\Psc\EmergencyPscController as EmergencyPsc;
+use App\Http\Controllers\Psc\DriverPscController as DriverPsc;
+use App\Http\Controllers\Psc\SyaratPscController as SyaratPsc;
+use App\Http\Controllers\Psc\PengaturanPscController as PengaturanPsc;
 use App\Http\Controllers\HC\PermintaanHCController as PermintaanHC;
 use App\Http\Controllers\HC\RiwayatHCController as RiwayatHC;
 use App\Http\Controllers\HC\LayananHCController as LayananHC;
@@ -91,108 +98,166 @@ Route::group(['middleware' => ['auth']], function () {
 		});
     });
     #Admin TELEMEDIS
-    Route::group(['middleware' => ['cek_login:admintelemedis', 'cek_login:admin']], function () {
+    Route::group(['middleware' => ['cek_login:admintelemedis']], function () {
         Route::group(['prefix'=>'telemedicine'],function(){
-			Route::get('/dashboard', [Dashboard::class, 'main'])->name('dashboardTelemedicine');
-            Route::get('/dashboard/get-data', [Dashboard::class, 'getData'])->name('getDashboardTelemedicine');
+			Route::get('/dashboard', [Dashboard::class, 'mainTelemedicine'])->name('dashboardTelemedicine');
+            Route::get('/dashboard/get-data', [Dashboard::class, 'getDataTelemedicine'])->name('getDashboardTelemedicine');
 		});
     });
-    # Homecare
-    Route::group(['prefix'=>'pendaftaran-homecare'],function(){
-        // PERMINTAAN HC
-        Route::group(['prefix'=>'permintaan'],function(){
-            Route::get('/', [PermintaanHC::class, 'main'])->name('mainPermintaanHC');
-            Route::post('/form-permintaan-hc', [PermintaanHC::class, 'form'])->name('formPermintaanHC');
-            Route::post('/save-permintaan-hc', [PermintaanHC::class, 'save'])->name('savePermintaanHC');
-            Route::post('/batal-permintaan-hc', [PermintaanHC::class, 'batal'])->name('batalPermintaanHC');
-        });
+    # Jika user admin/adminhomecare bisa akses menu homecare
+    Route::group(['middleware' => ['cek_login:adminhomecare']], function () {
+        # Homecare
+        Route::group(['prefix'=>'pendaftaran-homecare'],function(){
+            // PERMINTAAN HC
+            Route::group(['prefix'=>'permintaan'],function(){
+                Route::get('/', [PermintaanHC::class, 'main'])->name('mainPermintaanHC');
+                Route::post('/form-permintaan-hc', [PermintaanHC::class, 'form'])->name('formPermintaanHC');
+                Route::post('/save-permintaan-hc', [PermintaanHC::class, 'save'])->name('savePermintaanHC');
+                Route::post('/batal-permintaan-hc', [PermintaanHC::class, 'batal'])->name('batalPermintaanHC');
+            });
 
-        // RIWAYAT HC
-        Route::group(['prefix'=>'riwayat'],function(){
-            Route::get('/', [RiwayatHC::class, 'main'])->name('mainRiwayatHC');
-            Route::post('/export', [RiwayatHC::class, 'export'])->name('exportRiwayatHC');
-        });
+            // RIWAYAT HC
+            Route::group(['prefix'=>'riwayat'],function(){
+                Route::get('/', [RiwayatHC::class, 'main'])->name('mainRiwayatHC');
+                Route::post('/export', [RiwayatHC::class, 'export'])->name('exportRiwayatHC');
+            });
 
-        // LAYANAN HC
-        Route::group(['prefix'=>'layanan'],function(){
-            Route::get('/', [LayananHC::class, 'main'])->name('mainLayananHC');
-            Route::post('/form', [LayananHC::class, 'form'])->name('formLayananHC');
-            Route::post('/deletane', [LayananHC::class, 'delete'])->name('deleteLayananHC');
-            Route::post('/save', [LayananHC::class, 'store'])->name('saveLayananHC');
+            // LAYANAN HC
+            Route::group(['prefix'=>'layanan'],function(){
+                Route::get('/', [LayananHC::class, 'main'])->name('mainLayananHC');
+                Route::post('/form', [LayananHC::class, 'form'])->name('formLayananHC');
+                Route::post('/deletane', [LayananHC::class, 'delete'])->name('deleteLayananHC');
+                Route::post('/save', [LayananHC::class, 'store'])->name('saveLayananHC');
 
-            // Route::get('/', [LayananHC::class, 'index'])->name('indexLayananHC');
-            // Route::get('/layanan-hc/fetch_data', [LayananHC::class, 'fetch_data'])->name('layananhc.fetch_data');
-            // Route::post('/layanan-hc/add_data', [LayananHC::class, 'add_data'])->name('layananhc.add_data');
-            // Route::post('/layanan-hc/update_data', [LayananHC::class, 'update_data'])->name('layananhc.update_data');
-            // Route::post('/layanan-hc/delete_data', [LayananHC::class, 'delete_data'])->name('layananhc.delete_data');
-        });
+                // Route::get('/', [LayananHC::class, 'index'])->name('indexLayananHC');
+                // Route::get('/layanan-hc/fetch_data', [LayananHC::class, 'fetch_data'])->name('layananhc.fetch_data');
+                // Route::post('/layanan-hc/add_data', [LayananHC::class, 'add_data'])->name('layananhc.add_data');
+                // Route::post('/layanan-hc/update_data', [LayananHC::class, 'update_data'])->name('layananhc.update_data');
+                // Route::post('/layanan-hc/delete_data', [LayananHC::class, 'delete_data'])->name('layananhc.delete_data');
+            });
 
-        // PAKET HC
-        Route::group(['prefix'=>'paket'],function(){
-            Route::get('/', [PaketHC::class, 'main'])->name('mainPaketHC');
-            Route::post('/form', [PaketHC::class, 'form'])->name('formPaketHC');
-            Route::post('/delete', [PaketHC::class, 'delete'])->name('deletePaketHC');
-            Route::post('/save', [PaketHC::class, 'store'])->name('savePaketHC');
-        });
+            // PAKET HC
+            Route::group(['prefix'=>'paket'],function(){
+                Route::get('/', [PaketHC::class, 'main'])->name('mainPaketHC');
+                Route::post('/form', [PaketHC::class, 'form'])->name('formPaketHC');
+                Route::post('/delete', [PaketHC::class, 'delete'])->name('deletePaketHC');
+                Route::post('/save', [PaketHC::class, 'store'])->name('savePaketHC');
+            });
 
-        // TENAGA MEDIS
-        Route::group(['prefix'=>'tenaga-medis'],function(){
-            Route::get('/', [TenagaMedis::class, 'main'])->name('mainTenagaMedis');
-            Route::post('/form', [TenagaMedis::class, 'form'])->name('formTenagaMedis');
-            Route::post('/delete', [TenagaMedis::class, 'delete'])->name('deleteTenagaMedis');
-            Route::post('/save', [TenagaMedis::class, 'store'])->name('saveTenagaMedis');
-        });
+            // TENAGA MEDIS
+            Route::group(['prefix'=>'tenaga-medis'],function(){
+                Route::get('/', [TenagaMedis::class, 'main'])->name('mainTenagaMedis');
+                Route::post('/form', [TenagaMedis::class, 'form'])->name('formTenagaMedis');
+                Route::post('/delete', [TenagaMedis::class, 'delete'])->name('deleteTenagaMedis');
+                Route::post('/save', [TenagaMedis::class, 'store'])->name('saveTenagaMedis');
+            });
 
-        // PENGATURAN HC
-        Route::group(['prefix'=>'pengaturan'],function(){
-            Route::get('/', [PengaturanHC::class, 'form'])->name('formPengaturanHC');
-            Route::get('/get', [PengaturanHC::class, 'get'])->name('getPengaturanHC');
-            Route::post('/save', [PengaturanHC::class, 'store'])->name('savePengaturanHC');
-        });
+            // PENGATURAN HC
+            Route::group(['prefix'=>'pengaturan'],function(){
+                Route::get('/', [PengaturanHC::class, 'form'])->name('formPengaturanHC');
+                Route::get('/get', [PengaturanHC::class, 'get'])->name('getPengaturanHC');
+                Route::post('/save', [PengaturanHC::class, 'store'])->name('savePengaturanHC');
+            });
 
-        // SYARAT HC
-        Route::group(['prefix'=>'syarat-aturan'],function(){
-            Route::get('/', [SyaratHC::class, 'main'])->name('mainSyaratHC');
-            Route::post('/save', [SyaratHC::class, 'store'])->name('saveSyaratHC');
+            // SYARAT HC
+            Route::group(['prefix'=>'syarat-aturan'],function(){
+                Route::get('/', [SyaratHC::class, 'main'])->name('mainSyaratHC');
+                Route::post('/save', [SyaratHC::class, 'store'])->name('saveSyaratHC');
+            });
+        }); 
+    });
+    # Jika user admin/adminmcu bisa akses menu mcu
+    Route::group(['middleware' => ['cek_login:adminmcu']], function () {
+        # Mcu
+        Route::group(['prefix'=>'pendaftaran-mcu'],function(){
+            // PERMINTAAN MCU
+            Route::group(['prefix'=>'permintaan'],function(){
+                Route::get('/', [PermintaanMcu::class, 'main'])->name('mainPermintaanMcu');
+                Route::post('/bayar', [PermintaanMcu::class, 'form'])->name('formBayarPermintaanMcu');
+                Route::post('/simpan-bayar', [PermintaanMcu::class, 'simpan'])->name('simpanBayarPermintaanMcu');
+                Route::post('/proses', [PermintaanMcu::class, 'proses'])->name('prosesPermintaanMcu');
+            });
+            // RIWAYAT MCU
+            Route::group(['prefix'=>'riwayat'],function(){
+                Route::get('/', [RiwayatMcu::class, 'main'])->name('mainRiwayatMcu');
+            });
+            // LAYANAN MCU
+            Route::group(['prefix'=>'layanan'],function(){
+                Route::get('/', [LayananMcu::class, 'main'])->name('mainLayananMcu');
+                Route::post('/form', [LayananMcu::class, 'form'])->name('formLayananMcu');
+                Route::post('/delete', [LayananMcu::class, 'delete'])->name('deleteLayananMcu');
+                Route::post('/save', [LayananMcu::class, 'store'])->name('saveLayananMcu');
+            });
+            // SYARAT MCU
+            Route::group(['prefix'=>'syarat-aturan'],function(){
+                Route::get('/', [SyaratMcu::class, 'main'])->name('mainSyaratMcu');
+                Route::post('/save', [SyaratMcu::class, 'store'])->name('saveSyaratMcu');
+            });
+            // PENGATURAN MCU
+            Route::group(['prefix'=>'pengaturan'],function(){
+                Route::get('/', [PengaturanMcu::class, 'form'])->name('formPengaturanMCU');
+                Route::get('/get', [PengaturanMcu::class, 'get'])->name('getPengaturanMCU');
+                Route::post('/save', [PengaturanMcu::class, 'store'])->name('savePengaturanMcu');
+            });
         });
     });
-    # Mcu
-    Route::group(['prefix'=>'pendaftaran-mcu'],function(){
-        // PERMINTAAN MCU
-        Route::group(['prefix'=>'permintaan'],function(){
-            Route::get('/', [PermintaanMcu::class, 'main'])->name('mainPermintaanMcu');
-            Route::post('/bayar', [PermintaanMcu::class, 'form'])->name('formBayarPermintaanMcu');
-            Route::post('/simpan-bayar', [PermintaanMcu::class, 'simpan'])->name('simpanBayarPermintaanMcu');
-            Route::post('/proses', [PermintaanMcu::class, 'proses'])->name('prosesPermintaanMcu');
-        });
-        // RIWAYAT MCU
-        Route::group(['prefix'=>'riwayat'],function(){
-            Route::get('/', [RiwayatMcu::class, 'main'])->name('mainRiwayatMcu');
-        });
-        // LAYANAN MCU
-        Route::group(['prefix'=>'layanan'],function(){
-            Route::get('/', [LayananMcu::class, 'main'])->name('mainLayananMcu');
-            Route::post('/form', [LayananMcu::class, 'form'])->name('formLayananMcu');
-            Route::post('/delete', [LayananMcu::class, 'delete'])->name('deleteLayananMcu');
-            Route::post('/save', [LayananMcu::class, 'store'])->name('saveLayananMcu');
-        });
-        // SYARAT MCU
-        Route::group(['prefix'=>'syarat-aturan'],function(){
-            Route::get('/', [SyaratMcu::class, 'main'])->name('mainSyaratMcu');
-            Route::post('/save', [SyaratMcu::class, 'store'])->name('saveSyaratMcu');
-        });
-        // PENGATURAN MCU
-        Route::group(['prefix'=>'pengaturan'],function(){
-            Route::get('/', [PengaturanMcu::class, 'form'])->name('formPengaturanMCU');
-            Route::get('/get', [PengaturanMcu::class, 'get'])->name('getPengaturanMCU');
-            Route::post('/save', [PengaturanMcu::class, 'store'])->name('savePengaturanMcu');
+    # Jika user admin/adminambulance bisa akses menu ambulance
+    Route::group(['middleware' => ['cek_login:admin']], function () {
+        # Ambulance
+        Route::group(['prefix'=>'pendaftaran-psc'],function(){
+            // PERMINTAAN AMBULANCE
+            Route::group(['prefix'=>'permintaan'],function(){
+                Route::get('/', [PermintaanPsc::class, 'main'])->name('mainPermintaanPsc');
+                // Route::post('/bayar', [PermintaanMcu::class, 'form'])->name('formBayarPermintaanMcu');
+                // Route::post('/simpan-bayar', [PermintaanMcu::class, 'simpan'])->name('simpanBayarPermintaanMcu');
+                // Route::post('/proses', [PermintaanMcu::class, 'proses'])->name('prosesPermintaanMcu');
+            });
+            // RIWAYAT AMBULANCE
+            Route::group(['prefix'=>'riwayat'],function(){
+                Route::get('/', [RiwayatPsc::class, 'main'])->name('mainRiwayatPsc');
+            });
+            // LAYANAN AMBULANCE
+            Route::group(['prefix'=>'layanan'],function(){
+                Route::get('/', [LayananPsc::class, 'main'])->name('mainLayananPsc');
+            //     Route::post('/form', [LayananMcu::class, 'form'])->name('formLayananMcu');
+            //     Route::post('/delete', [LayananMcu::class, 'delete'])->name('deleteLayananMcu');
+            //     Route::post('/save', [LayananMcu::class, 'store'])->name('saveLayananMcu');
+            });
+            // CALL EMERGENCY
+            Route::group(['prefix'=>'emergency'],function(){
+                Route::get('/', [EmergencyPsc::class, 'main'])->name('mainEmergencyPsc');
+            //     Route::post('/form', [LayananMcu::class, 'form'])->name('formLayananMcu');
+            //     Route::post('/delete', [LayananMcu::class, 'delete'])->name('deleteLayananMcu');
+            //     Route::post('/save', [LayananMcu::class, 'store'])->name('saveLayananMcu');
+            });
+            // DRIVER AMBULANCE
+            Route::group(['prefix'=>'driver'],function(){
+                Route::get('/', [DriverPsc::class, 'main'])->name('mainDriverPsc');
+            //     Route::post('/form', [LayananMcu::class, 'form'])->name('formLayananMcu');
+            //     Route::post('/delete', [LayananMcu::class, 'delete'])->name('deleteLayananMcu');
+            //     Route::post('/save', [LayananMcu::class, 'store'])->name('saveLayananMcu');
+            });
+            // SYARAT AMBULANCE
+            Route::group(['prefix'=>'syarat-aturan'],function(){
+                Route::get('/', [SyaratPsc::class, 'main'])->name('mainSyaratPsc');
+                // Route::post('/save', [SyaratMcu::class, 'store'])->name('saveSyaratMcu');
+            });
+            // PENGATURAN AMBULANCE
+            Route::group(['prefix'=>'pengaturan'],function(){
+                Route::get('/', [PengaturanPsc::class, 'main'])->name('mainPengaturanPsc');
+            //     Route::get('/get', [PengaturanMcu::class, 'get'])->name('getPengaturanMCU');
+            //     Route::post('/save', [PengaturanMcu::class, 'store'])->name('savePengaturanMcu');
+            });
         });
     });
-    # Telemedicine
-    Route::group(['prefix'=>'pendaftaran-telemedicine'],function(){
-        Route::group(['prefix'=>'permintaan'],function(){
-            Route::get('/', [Telemedicine::class, 'main'])->name('mainPermintaanTelemedicine');
-        });
+    # Jika user admin/admintelemedis bisa akses menu telemedis
+    Route::group(['middleware' => ['cek_login:admintelemedis']], function () {
+        # Telemedicine
+        Route::group(['prefix'=>'pendaftaran-telemedicine'],function(){
+            Route::group(['prefix'=>'permintaan'],function(){
+                Route::get('/', [Telemedicine::class, 'main'])->name('mainPermintaanTelemedicine');
+            });
+        }); 
     });
 });
 Route::group(['prefix' => 'invoice'], function() {

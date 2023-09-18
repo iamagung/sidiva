@@ -354,7 +354,7 @@
 		<!-- main menu -->
 		<nav class="topbar-nav">
 			<ul class="metismenu" id="menu">
-				@if(Auth::User()->level=='1') <!-- Admin Aplikasi -->
+				@if(Auth::User()->level=='admin') <!-- Admin Aplikasi -->
 					<li>
 						<a href="{{ Route('dashboard')}}">
 							<div class="parent-icon text-white"><i class='bx bx-home'></i>
@@ -387,7 +387,7 @@
 							<div class="menu-title">Laporan Keuangan</div>
 						</a>
 					</li>
-				@elseif(Auth::User()->level=='2') <!-- Admin MCU -->
+				@elseif(Auth::User()->level=='adminmcu') <!-- Admin MCU -->
 					<li>
 						<a href="{{ Route('dashboardMcu')}}">
 							<div class="parent-icon text-white"><i class='bx bx-home'></i>
@@ -396,7 +396,7 @@
 						</a>
 					</li>
 					@include('include.navbar.mcu')
-				@elseif(Auth::User()->level=='3') <!-- Admin Homecare -->
+				@elseif(Auth::User()->level=='adminhomecare') <!-- Admin Homecare -->
 					<li>
 						<a href="{{ Route('dashboardHomecare')}}">
 							<div class="parent-icon text-white"><i class='bx bx-home'></i>
@@ -405,7 +405,7 @@
 						</a>
 					</li>
 					@include('include.navbar.homecare')
-				@else <!-- Admin Telemedis -->	
+				@elseif(Auth::User()->level=='admintelemedis') <!-- Admin Telemedis -->	
 					<li>
 						<a href="{{ Route('dashboardTelemedicine')}}">
 							<div class="parent-icon text-white"><i class='bx bx-home'></i>

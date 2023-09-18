@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PermintaanHC;
+use App\Models\PermintaanTelemedicine;
 use App\Models\PermintaanMcu;
 use Carbon\Carbon;
 
@@ -118,4 +119,35 @@ class DasboardController extends Controller
         return ['code' => 200, 'status' => 'success', 'message' => 'Berhasil', 'data' => $data];
     }
     # End Homecare
+    # Start Telemedicine
+    public function mainTelemedicine() {
+        $data['title'] = 'Dashboard Homecare';
+        $data['menu'] = 'dashboardHomecare';
+        return view('admin.dashboard.telemedicine', $data);
+    }
+    public function getDataTelemedicine()
+    {
+        $today = date('Y-m-d');
+        $monthNow = date('m');
+        $yearNow = date('Y');
+        $monthPrev = now()->subMonth()->format('m');
+        $yearPrev = now()->subMonth()->format('Y');
+        $data['ttlPermintaanTelemedicine']   = PermintaanTelemedicine::where('tanggal_kunjungan', $today)->count();
+        #1 Start calculate presentase permintaan HC bulan ini dengan bulan kemaren
+        $getHcNowMonth  = PermintaanTelemedicine::whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
+        $getHcPrevMonth  = PermintaanTelemedicine::whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
+        if ($getHcNowMonth > 0 && $getHcPrevMonth > 0) {
+            $percentPermintaanTelemedicine = round((($getHcNowMonth-$getHcPrevMonth)/$getHcNowMonth)*100);
+            if (substr($percentPermintaanTelemedicine, 0,1) == '-' || $percentPermintaanTelemedicine == 0) {
+                $data['diffPermintaanTelemedicine'] = "$percentPermintaanTelemedicine%";
+            } else {
+                $data['diffPermintaanTelemedicine'] = "+$percentPermintaanTelemedicine%";
+            }
+        } else {
+            $data['diffPermintaanTelemedicine'] = "+0%";
+        }
+        # end
+        return ['code' => 200, 'status' => 'success', 'message' => 'Berhasil', 'data' => $data];
+    }
+    # End Telemedicine
 }

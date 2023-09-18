@@ -2,7 +2,7 @@
     <a href="javascript:void(0)" class="has-arrow text-white">
         <div class="parent-icon text-white"><i class="bx bx-first-aid"></i>
         </div>
-        <div class="menu-title">Medical Check Up (MCU)</div>
+        <div class="menu-title">Medical Check Up</div>
     </a>
     <ul>
         <li>

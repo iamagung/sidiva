@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Psc;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-class PermintaanPscController extends Controller
+class EmergencyPscController extends Controller
 {
     function __construct()
 	{
@@ -14,7 +14,6 @@ class PermintaanPscController extends Controller
 
     public function main() {
         $data['title'] = $this->title;
-        return view('admin.psc.permintaan.main', $data);
+        return view('admin.psc.emergency.main', $data);
     }
-    
 }

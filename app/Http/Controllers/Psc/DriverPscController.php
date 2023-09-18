@@ -5,16 +5,16 @@ namespace App\Http\Controllers\Psc;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-class PermintaanPscController extends Controller
+class DriverPscController extends Controller
 {
     function __construct()
 	{
-		$this->title = 'Permintaan Ambulance';
+		$this->title = 'Driver Ambulance';
 	}
 
     public function main() {
         $data['title'] = $this->title;
-        return view('admin.psc.permintaan.main', $data);
+        return view('admin.psc.driver.main', $data);
     }
     
 }
