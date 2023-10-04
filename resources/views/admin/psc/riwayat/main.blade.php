@@ -61,17 +61,6 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {{-- <tr>
-                                <td>1</td>
-                                <td>STEPANUS SIMANJUNTAK</td>
-                                <td>081234432234</td>
-                                <td>22-06-2024</td>
-                                <td>PENGAWALAN</td>
-                                <td>Mojokerto</td>
-                                <td>Mojokerto</td>
-                                <td>PROSES</td>
-                                <td>-</td>
-                            </tr> --}}
                         </tbody>
                     </table>
                 </div>
@@ -121,21 +110,21 @@
                 },
             ],
             ajax: {
-                url: "{{route('mainRiwayatMcu')}}",
+                url: "{{route('mainRiwayatPsc')}}",
                 data: {
                     tanggal : tanggal
                 }
             },
             columns: [
-                { data: "DT_RowIndex", name: "DT_RowIndex"},
-                { data: "tanggal_kunjungan", name: "tanggal_kunjungan"},
-                { data: "rm", name: "rm"},
-                { data: "nama", name: "nama"},
-                { data: "jenis_layanan", name: "jenis_layanan"},
-                { data: "nama_layanan", name: "nama_layanan"},
-                { data: "jenis_layanan", name: "jenis_layanan"},
-                { data: "nama_layanan", name: "nama_layanan"},
-                { data: "actions", name: "actions", class: "text-center"},
+                { data: "DT_RowIndex", name: "DT_RowIndex", class: "text-center"},
+                { data: "nama", name: "nama", class: "text-center"},
+                { data: "no_telepon", name: "no_telepon", class: "text-center"},
+                { data: "tanggal_kunjungan", name: "tanggal_kunjungan", class: "text-center"},
+                { data: "jenis_layanan", name: "jenis_layanan", class: "text-center"},
+                { data: "longitude_jemput", name: "longitude_jemput", class: "text-center"},
+                { data: "longitude_antar", name: "longitude_antar", class: "text-center"},
+                { data: "status_pasien", name: "status_pasien", class: "text-center"},
+                { data: "tanggal_kunjungan", name: "tanggal_kunjungan", class: "text-center"},
             ],
         })
     }

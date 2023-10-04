@@ -72,7 +72,7 @@ class PengaturanHCController extends Controller
         }
         $data->biaya_per_km     = preg_replace("/[^0-9]/", "", $request->biaya_per_km);
         $data->jarak_maksimal   = $request->jarak_maksimal;
-        $data->batas_waktu      = $request->batas_waktu;
+        // $data->batas_waktu      = $request->batas_waktu;
         $data->save();
 
         if ($data) {

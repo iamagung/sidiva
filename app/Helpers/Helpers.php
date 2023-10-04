@@ -29,7 +29,6 @@ class Helpers{
 			return $split[2] . ' ' . $bulan[ (int)$split[1] ] . ' ' . $split[0];
 		}
 	}
-
 	public static function getDay($param){
 		if($param=='Sun'){
 			$hari = 'Minggu';
@@ -48,14 +47,15 @@ class Helpers{
 		}
 		return $hari;
 	}
+	public static function checkPermintaan($nik, $tanggal,){
 
+	}
 	# Generate no rm
 	public static function generateRM(){
 		$getKode = DB::connection('dbrsud')->table('tm_customer')->max('KodeCust');
 		$num = (int)substr($getKode, 5);
 		return $nextKode = 'W'.date("ym").(string)($num+1);
 	}
-
 	# Generate no registrasi mcu
 	public static function generateNoRegMcu($request)
 	{
@@ -73,7 +73,6 @@ class Helpers{
 		$reg       			= sprintf("%03d",$num+1);
 		return $nextAntri 	= "$prefix".$reg;
 	}
-
 	# Generate no registrasi homecare
 	public static function generateNoRegHc($request)
 	{
@@ -91,7 +90,6 @@ class Helpers{
 		$reg       			= sprintf("%03d",$num+1);
 		return $nextAntri 	= "$prefix".$reg;
 	}
-
 	# Random string
 	public static function randomString($length){
 		$characters = '0123456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -103,7 +101,6 @@ class Helpers{
 		}
 		return $randomString;
 	}
-
 	# Callback pendaftaran mcu
 	public static function callbackRegistMcu($params)
 	{
@@ -116,7 +113,6 @@ class Helpers{
 			'layanan' 	=> $layanan
 		];
 	}
-
 	# Callback pendaftaran homecare
 	public static function callbackRegistHc($params)
 	{
@@ -131,7 +127,6 @@ class Helpers{
 			'total'		=> $biayaTotal
 		];
 	}
-
 	# Generate no antrian
 	public static function generateNoantrian(Request $request)
 	{
@@ -149,7 +144,6 @@ class Helpers{
 		$angkaAntri       = sprintf("%03d",$num+1);
 		return $nextAntri = "$prefix".$angkaAntri;
 	}
-
 	# Menghitung jarak dari rsud wahidin ke lokasi pasien
 	public static function calculateDistance($latitude, $longitude)
     {
@@ -285,6 +279,30 @@ class Helpers{
 			],
 			'response' => $data,
 		],$code);
+	}
+	public static function resAjax($data=[]){
+		$keyData = ['message','code','response'];
+		$arr = [];
+		foreach($keyData as $key => $val){
+			$arr[$val] = isset($data[$val]) ? $data[$val] : ( # Cek key, apakah sudah di set
+				$val=='code' ? 500 : (
+					$val=='message' ? '-' : []
+				)
+			);
+		}
+
+		$code = $arr['code'];
+		$msg = $arr['message'];
+
+		$metadata = [
+			'code'    => $arr['code'],
+			'message' => $arr['message'],
+		];
+		$payload['metadata'] = $metadata;
+		if($code>=200 && $code<250){
+			$payload['response'] = $arr['response'];
+		}
+		return response()->json($payload,$code);
 	}
 	# Custom response end
 	

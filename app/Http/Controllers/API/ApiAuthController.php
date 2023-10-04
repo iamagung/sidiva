@@ -44,6 +44,7 @@ class ApiAuthController extends Controller
                 return Help::resApi('No.Telepon Sudah Pernah Didaftarkan.',201);
             }
             try {
+                return 'ok';
                 DB::beginTransaction();
                 $data = new User; #Save to users
                 $data->name             = strtoupper($request->nama);

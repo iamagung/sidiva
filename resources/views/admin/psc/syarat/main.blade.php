@@ -17,22 +17,22 @@
     <!-- main content -->
     <div class="card main-layer">
         <div class="card-header">
-            <h5>{{$title}} Ambulance</h5>
+            <h5>Syarat dan Ketentuan</h5>
         </div>
         <div class="card-body">
             <form id="commentForm">
                 <div class="row mb-3">
-                    <input type="hidden" name="id" id="id" value="{{ !empty($syarat) ? $syarat->id_syarat_mcu : ''}}">
+                    <input type="hidden" name="id" id="id" value="{{ !empty($syarat) ? $syarat->id_syarat_aturan_ambulance : ''}}">
                     <div class="col-md-12">
-                        <label>Syarat dan Ketentuan</label><br>
-                        <textarea id="editor1" name="isi">{{isset($syarat) ? $syarat->isi : ''}}</textarea>
+                        {{-- <label>Syarat dan Ketentuan</label><br> --}}
+                        <textarea id="editor1" name="syarat_aturan">{{isset($syarat) ? $syarat->syarat_aturan : ''}}</textarea>
                     </div>
                 </div>
             </form>
         </div>
         <div class="card-footer">
             <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                <button class="btn mb-2" style="background: #6C757D; color: #fff; width: 10%">Kembali</button>
+                <button class="btn mb-2" style="background: #6C757D; color: #fff; width: 10%" id="kembali">Kembali</button>
                 <button class="btn mb-2" type="button" style="background: #007BFF; color: #fff; width: 10%" id="simpan">Simpan</button>
             </div>
         </div>
@@ -55,14 +55,14 @@
     $('#simpan').click(function (e) { 
         e.preventDefault();
         var data = new FormData($('#commentForm')[0]);
-        var isi = CKEDITOR.instances.editor1.getData();
-        data.append('isi',isi);
+        var syarat_aturan = CKEDITOR.instances.editor1.getData();
+        data.append('syarat_aturan',syarat_aturan);
 
-        if(isi==''){
+        if(syarat_aturan==''){
             Swal.fire('Peringatan', 'Syarat & Aturan Wajib Diisi.', 'warning');
         }else{
             $.ajax({
-                url : "{{route('saveSyaratMcu')}}",
+                url : "{{route('saveSyaratPsc')}}",
                 type: "POST",
                 data: data,
                 contentType : false,
@@ -76,6 +76,10 @@
                 }
             })
         }
+    });
+    $('#kembali').click(function (e) { 
+        e.preventDefault();
+        window.history.back();
     });
 </script>
 @endpush

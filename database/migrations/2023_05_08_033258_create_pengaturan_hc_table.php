@@ -29,11 +29,8 @@ class CreatePengaturanHcTable extends Migration
             $table->string('sabtuTutup')->nullable();
             $table->string('mingguBuka')->nullable();
             $table->string('mingguTutup')->nullable();
-            $table->string('liburNasionalBuka')->nullable();
-            $table->string('liburNasionalTutup')->nullable();
             $table->integer('biaya_per_km');
             $table->string('jarak_maksimal');
-            $table->string('batas_waktu');
             $table->timestamps();
         });
     }

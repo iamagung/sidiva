@@ -20,7 +20,6 @@ class ApiPendaftaranHcController extends Controller
     public function __construct(){
         date_default_timezone_set('Asia/Jakarta');
     }
-
     public function getLayananHC(Request $request)
     {
         try {
@@ -52,44 +51,42 @@ class ApiPendaftaranHcController extends Controller
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
+    // public function getPaketHC(Request $request)
+    // {
+    //     try{
+    //         $data = PaketHC::all();
+    //         if (count($data) > 0) {
+    //             $respon = [
+    //                 'metaData' => [
+    //                     "code" => 200,
+    //                     "message" => 'Berhasil'
+    //                 ],
+    //                 'response' => $data
+    //             ];
+    //         } else {
+    //             $respon = [
+    //                 'metaData' => [
+    //                     "code" => 500,
+    //                     "message" => 'Data Tidak Ditemukan'
+    //                 ],
+    //                 'response' => []
+    //             ];
+    //         }
 
-    public function getPaketHC(Request $request)
-    {
-        try{
-            $data = PaketHC::all();
-            if (count($data) > 0) {
-                $respon = [
-                    'metaData' => [
-                        "code" => 200,
-                        "message" => 'Berhasil'
-                    ],
-                    'response' => $data
-                ];
-            } else {
-                $respon = [
-                    'metaData' => [
-                        "code" => 500,
-                        "message" => 'Data Tidak Ditemukan'
-                    ],
-                    'response' => []
-                ];
-            }
+    //         return response()->json($respon);
+    //     } catch (\Throwable $e) {
+    //         # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
+    //         $log = ['ERROR GET PAKET HC ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+    //         Help::logging($log);
 
-            return response()->json($respon);
-        } catch (\Throwable $e) {
-            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
-            $log = ['ERROR GET PAKET HC ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
-            Help::logging($log);
-
-            return Help::resApi('Terjadi kesalahan sistem',500);
-        }
-    }
-
-    public function getDetailPaketHC(Request $request)
+    //         return Help::resApi('Terjadi kesalahan sistem',500);
+    //     }
+    // }
+    public function getDetailLayananHC(Request $request)
     {
         try {
-            if (!empty($request->paket_id)) {
-                $data = PaketHC::where('id_paket_hc', $request->paket_id)->first();
+            if (!empty($request->id_layanan_hc)) {
+                $data = LayananHC::where('id_layanan_hc', $request->id_layanan_hc)->first();
                 if (!empty($data)) {
                     $respon = [
                         'metaData' => [
@@ -125,7 +122,6 @@ class ApiPendaftaranHcController extends Controller
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-
     public function getSyaratAturanHC(Request $request)
     {
         try{
@@ -157,56 +153,35 @@ class ApiPendaftaranHcController extends Controller
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-
     public function pesanJadwalHC(Request $request)
     {
-        return 'test';
-        if ($request->no_rm == "") {
-            $validate = Validator::make($request->all(),[
-                'layanan_id' => 'required',
-                'paket_id' => 'required',
-                'nik' => 'required',
-                'nama' => 'required',
-                'tanggal_lahir' => 'required',
-                'tanggal_kunjungan' => 'required',
-                'latitude' => 'required',
-                'longitude' => 'required',
-                'jenis_kelamin' => 'required',
-                'alamat'=> 'required'
-            ],[
-                'layanan_id.required' => 'Layanan Home Care Wajib Di isi',
-                'paket_id.required' => 'Paket Home Care Wajib Di isi',
-                'nik.required' => 'Nik Wajib Di isi',
-                'nama.required' => 'Nama Wajib Di isi',
-                'tanggal_lahir.required' => 'Tanggal Lahir Wajib Di isi',
-                'tanggal_kunjungan.required' => 'Tanggal Kunjungan Wajib Di isi',
-                'latitude.required' => 'Lokasi Wajib Diisi',
-                'longitude.required' => 'Lokasi Wajib Diisi',
-                'jenis_kelamin.required' => 'Jenis Kelamin Wajib Di isi',
-                'alamat.required' => 'Alamat Wajib Di isi'
-            ]);
-        }else{
-            $validate = Validator::make($request->all(),[
-                'no_rm' => 'required',
-                'jenis_pembayaran' => 'required',
-                'layanan_id' => 'required',
-                'paket_id' => 'required',
-                'tanggal_kunjungan' => 'required',
-                'latitude' => 'required',
-                'longitude' => 'required',
-            ],[
-                'no_rm.required' => 'No RM Wajib Diisi',
-                'jenis_pembayaran.required' => 'Jenis Pembayaran Wajib Di isi',
-                'layanan_id.required' => 'Layanan Home Care Wajib Di isi',
-                'paket_id.required' => 'Paket Home Care Wajib Di isi',
-                'tanggal_kunjungan.required' => 'Tanggal Kunjungan Wajib Di isi',
-                'latitude.required' => 'Lokasi Wajib Diisi',
-                'longitude.required' => 'Lokasi Wajib Diisi'
-            ]);
-        }
+        // return 'test';
+        $validate = Validator::make($request->all(),[
+            'nik' => 'required',
+            'nama' => 'required',
+            'tempat_lahir' => 'required',
+            'tanggal_lahir' => 'required',
+            'jenis_kelamin' => 'required',
+            'alamat' => 'required',
+            'telepon' => 'required',
+            'latitude' => 'required',
+            'longitude' => 'required',
+            'layanan_id' => 'required'
+        ],[
+            'nik.required' => 'NIK Wajib Diisi',
+            'nama.required' => 'Nama Lengkap Wajib Di isi',
+            'tempat_lahir.required' => 'Tempat Lahir Wajib Di isi',
+            'tanggal_lahir.required' => 'Tanggal Lahir Wajib Di isi',
+            'jenis_kelamin.required' => 'Jenis Kelamin Wajib Di isi',
+            'alamat.required' => 'Alamat Wajib Di isi',
+            'telepon.required' => 'Telepon Wajib Di isi',
+            'jenis_layanan.required' => 'Jenis Layanan Wajib Di isi',
+            'latitude.required' => 'Lokasi Wajib Diisi',
+            'longitude.required' => 'Lokasi Wajib Diisi'
+        ]);
         if (!$validate->fails()) {
-            $tanggal = strtotime($request->tanggal_kunjungan);
-            $request->tanggal_kunjungan = date('Y-m-d', $tanggal);
+            $tanggal = strtotime(date('Y-m-d'));
+            $tanggalKunjungan = date('Y-m-d', strtotime($request->tanggal_kunjungan));
             $check_nik = $this->checkByNik($request->nik, $request->tanggal_kunjungan);
             if ($check_nik > 0) {
                 return response()->json([
@@ -217,17 +192,15 @@ class ApiPendaftaranHcController extends Controller
                     'response' => [],
                 ]);
             }
-			$timeCur = date('H:i');
-			$dateCur = date('Y-m-d');
 			$dayName = date('D',strtotime($request->tanggal_kunjungan));
             $pengaturan = PengaturanHC::where('id_pengaturan_hc', 1)->first();
             if ($dayName == 'Mon') { # Senin
                 if ($pengaturan->seninBuka == '' || $pengaturan->seninTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->seninBuka) {
+                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->seninBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->seninBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->seninTutup) {
+                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->seninTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->seninTutup,201);
                     }
                 }
@@ -236,9 +209,9 @@ class ApiPendaftaranHcController extends Controller
                 if ($pengaturan->selasaBuka == '' || $pengaturan->selasaTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->selasaBuka) {
+                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->selasaBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->selasaBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->selasaTutup) {
+                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->selasaTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->selasaTutup,201);
                     }
                 }
@@ -247,9 +220,9 @@ class ApiPendaftaranHcController extends Controller
                 if ($pengaturan->rabuBuka == '' || $pengaturan->rabuTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->rabuBuka) {
+                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->rabuBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->rabuBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->rabuTutup) {
+                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->rabuTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->rabuTutup,201);
                     }
                 }
@@ -258,9 +231,9 @@ class ApiPendaftaranHcController extends Controller
                 if ($pengaturan->kamisBuka == '' || $pengaturan->kamisTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->kamisBuka) {
+                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->kamisBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->kamisBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->kamisTutup) {
+                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->kamisTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->kamisTutup,201);
                     }
                 }
@@ -269,9 +242,9 @@ class ApiPendaftaranHcController extends Controller
                 if ($pengaturan->jumatBuka == '' || $pengaturan->jumatTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->jumatBuka) {
+                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->jumatBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->jumatBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->jumatTutup) {
+                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->jumatTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->jumatTutup,201);
                     }
                 }
@@ -280,9 +253,9 @@ class ApiPendaftaranHcController extends Controller
                 if ($pengaturan->sabtuBuka == '' || $pengaturan->sabtuTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->sabtuBuka) {
+                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->sabtuBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->sabtuBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->sabtuTutup) {
+                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->sabtuTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->sabtuTutup,201);
                     }
                 }
@@ -290,41 +263,30 @@ class ApiPendaftaranHcController extends Controller
 			if($dayName == 'Sun'){ # If tanggal periksa adalah hari minggu
 				return Help::resApi('Tidak bisa mengambil antrian pada hari minggu.',201);
 			}
-            if($request->tanggal_kunjungan<$dateCur){ # If tanggal periksa kemarin{back date}
+            if($tanggalKunjungan<$tanggal){ # If tanggal periksa kemarin{back date}
                 return Help::resApi('Tanggal sudah terlewat.',201);
             }
             $pasien = TmCustomer::where('NoKtp','=',$request->nik)->first();
-            if (empty($pasien)) {
-                $pasien = TmCustomer::where('KodeCust','=',$request->no_rm)->first();
-            }
             if (strlen($request->nik)!=16) {
                 return Help::resApi('NIK tidak sesuai standar 16 digit.',201);
             }
-            if($request->jenis_pembayaran == 'BPJS') {
-                if (strlen($request->no_bpjs)!=13) {
-                    return Help::resApi('Nomor BPJS tidak sesuai standar 13 digit.',201);
-                }
-            }
             try {
-                $noreg = Help::generateNoRegHc($request);
                 $data = new PermintaanHC;
                 $data->layanan_hc_id     = $request->layanan_id;
-                $data->paket_hc_id       = $request->paket_id;
                 $data->no_rm             = !empty($pasien) ? $request->no_rm : null;
                 $data->nik               = !empty($pasien) ? $pasien->NoKtp : $request->nik;
-                $data->no_registrasi     = $noreg;
+                $data->no_registrasi     = Help::generateNoRegHc($request);
                 $data->nama              = !empty($pasien) ? $pasien->NamaCust : strtoupper($request->nama);
                 $data->alamat            = !empty($pasien) ? $pasien->Alamat : $request->alamat;
-                $data->no_bpjs           = !empty($request->no_bpjs) ? $request->no_bpjs : null;
-                $data->no_rujukan        = !empty($request->no_rujukan) ? $request->no_rujukan : null;
-                $data->tanggal_order     = date('Y-m-d');
-                $data->tanggal_kunjungan = $request->tanggal_kunjungan;
+                $data->tempat_lahir      = !empty($request->no_bpjs) ? $request->no_bpjs : null;
                 $data->tanggal_lahir     = !empty($pasien) ? $pasien->TglLahir : $request->tanggal_lahir;
+                $data->tanggal_order     = $tanggal;
+                $data->tanggal_kunjungan = $tanggalKunjungan;
                 $data->alergi_pasien     = $request->alergi_pasien;
                 $data->latitude          = $request->latitude;
                 $data->longitude         = $request->longitude;
                 $data->jenis_pembayaran  = $request->jenis_pembayaran;
-                $data->no_telepon        = !empty($pasien) ? $pasien->Telp : $request->no_telepon;
+                $data->no_telepon        = !empty($pasien) ? $pasien->Telp : $request->telepon;
                 $data->jenis_kelamin     = !empty($pasien) ? $pasien->JenisKel : $request->jenis_kelamin;
                 $data->status_pasien     = 'belum';
                 $data->save();
@@ -371,7 +333,6 @@ class ApiPendaftaranHcController extends Controller
             ]);
         }
     }
-
     // public function getListPembayaranHC($id)
     // {
     //     try{

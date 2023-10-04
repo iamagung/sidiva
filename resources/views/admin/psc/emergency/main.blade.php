@@ -45,18 +45,6 @@
                 </div>
             </div>
             <div class="row">
-                {{-- <div class="col-md-6" style="margin-bottom:10px">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-auto">
-                            <label>Tanggal</label>
-                        </div>
-                        <div class="col-auto">
-                            <input type="date" id="tanggal" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3"></div>
-                <div class="col-md-3"></div> --}}
                 <div class="table-responsive">
                     <table id="datatabel" class="table table-striped table-bordered" width="100%">
                         <thead>
@@ -69,13 +57,13 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {{-- <tr>
-                                <td>1</td>
+                            <tr>
+                                <td>No</td>
                                 <td>081234432234</td>
                                 <td>22-06-2024</td>
                                 <td>08.15.01</td>
                                 <td>-7.4935997,112.4649082,15</td>
-                            </tr> --}}
+                            </tr>
                         </tbody>
                     </table>
                 </div>

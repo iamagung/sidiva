@@ -31,11 +31,13 @@ class SyaratHCController extends Controller
     {
         if (empty($request->id)) {
 			$syarat = new SyaratHC;
+            $syarat->isi = $request->isi;
+            $syarat->save();
 		}else{
-			$syarat = SyaratHC::where('id_syarat_hc', $request->id)->first();
+			$syarat = DB::table('syarat_hc')
+                ->where('id_syarat_hc','=',1)
+                ->update(['isi' => $request->isi]);
 		}
-		$syarat->isi = $request->isi;
-		$syarat->save();
 
 		if ($syarat) {
 			$data = ['code' => 200, 'status' => 'success', 'message' => 'Berhasil Menyimpan Data'];
