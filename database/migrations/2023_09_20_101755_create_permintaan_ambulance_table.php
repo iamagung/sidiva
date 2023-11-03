@@ -17,7 +17,7 @@ class CreatePermintaanAmbulanceTable extends Migration
             $table->bigIncrements('id_permintaan_ambulance');
             $table->string('nik');
             $table->string('nama');
-            $table->date('tanggal_kunjungan');
+            $table->date('tanggal_order');
             $table->string('tempat_lahir');
             $table->date('tanggal_lahir');
             $table->string('jenis_kelamin');

@@ -31,6 +31,7 @@ class PengaturanMcuController extends Controller
 
     public function store(Request $request)
     {
+        // return $request->all();
         $pengaturan = PengaturanMcu::all();
         if (count($pengaturan) > 0) {
             PengaturanMcu::truncate();
@@ -64,6 +65,7 @@ class PengaturanMcuController extends Controller
             $data->mingguBuka   = $request->buka7;
             $data->mingguTutup  = $request->tutup7;
         }
+        $data->informasi_pembatalan = $request->deskripsi;
         $data->save();
 
         if ($data) {

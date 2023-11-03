@@ -5,7 +5,47 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Firebase\JWT\JWT;
 use App\Models\User;
+use App\Models\ResepObat;
 class Helpers{
+	# Sender otp start
+	public static function messageSenderOtp($params){
+		try {
+			$curl = curl_init();
+			$token = "Qwf4jUkeX3h6OwNpWjzsg82stjUYWcx0tsxXc7vfLgva3Iap3nxPzlO0yrfDPGCl";
+			$code_otp = $params->otp;
+			$pesan = 'Selamat registrasi berhasil.';
+			$pesan .= "\nKode verifikasi anda : *$code_otp*";
+			$payload = [
+				"data" => [
+					[
+						'phone' => $params->phone,
+						'message' => $pesan,
+					]
+				]
+			];
+			curl_setopt($curl, CURLOPT_HTTPHEADER,
+				array(
+					"Authorization: $token",
+					"Content-Type: application/json"
+				)
+			);
+			curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "POST");
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($payload) );
+			curl_setopt($curl, CURLOPT_URL,  "https://jogja.wablas.com/api/v2/send-message");
+			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+			$result = curl_exec($curl);
+			curl_close($curl);
+			return json_decode($result);
+		} catch (\Throwable $e) {
+			$log = ['ERROR SEND OTP ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            self::logging($log);
+            return self::resApi('Terjadi kesalahan sistem',500);
+		}
+
+	}
+	# Sender otp end
 	public static function dateIndo($param,$request='tanggal'){
 		$bulan = [
 			1 => 'Januari',
@@ -47,9 +87,6 @@ class Helpers{
 		}
 		return $hari;
 	}
-	public static function checkPermintaan($nik, $tanggal,){
-
-	}
 	# Generate no rm
 	public static function generateRM(){
 		$getKode = DB::connection('dbrsud')->table('tm_customer')->max('KodeCust');
@@ -78,7 +115,24 @@ class Helpers{
 	{
 		$prefix = 'Reg-';
 		$length = strlen($prefix)+3;
-		$regist = DB::table('permintaan_mcu')->select('no_registrasi')
+		$regist = DB::table('permintaan_hc')->select('no_registrasi')
+				->where('tanggal_kunjungan',date('Y-m-d', strtotime($request->tanggal_kunjungan)))
+				->whereRaw("LENGTH(no_registrasi)=$length")
+				->where('no_registrasi','like',"$prefix%")
+				->orderBy('no_registrasi','desc')->first();
+		$num = 0;
+		if(!empty($regist)){
+			$num = (int)substr($regist->no_registrasi, -3);
+		}
+		$reg       			= sprintf("%03d",$num+1);
+		return $nextAntri 	= "$prefix".$reg;
+	}
+	# Generate no registrasi telemedicine
+	public static function generateNoRegTelemedicine($request)
+	{
+		$prefix = 'Reg-';
+		$length = strlen($prefix)+3;
+		$regist = DB::table('permintaan_telemedicine')->select('no_registrasi')
 				->where('tanggal_kunjungan',$request->tanggal_kunjungan)
 				->whereRaw("LENGTH(no_registrasi)=$length")
 				->where('no_registrasi','like',"$prefix%")
@@ -88,6 +142,22 @@ class Helpers{
 			$num = (int)substr($regist->no_registrasi, -3);
 		}
 		$reg       			= sprintf("%03d",$num+1);
+		return $nextAntri 	= "$prefix".$reg;
+	}
+	# Generate no resep telemedicine
+	public static function generateNoResepTelemedicine()
+	{
+		$prefix = 'RCP/TELE/';
+		$tahun = date('Y/m');
+		$prefix .= $tahun.'/';
+		$regist = ResepObat::select('no_resep')
+				->where('no_resep','like',"$prefix%")
+				->orderBy('no_resep','desc')->first();
+		$num = 0;
+		if(!empty($regist)){
+			$num = (int)substr($regist->no_resep, -6);
+		}
+		$reg       			= sprintf("%06d",$num+1);
 		return $nextAntri 	= "$prefix".$reg;
 	}
 	# Random string
@@ -116,15 +186,31 @@ class Helpers{
 	# Callback pendaftaran homecare
 	public static function callbackRegistHc($params)
 	{
-		$permintaan 	= DB::table('permintaan_hc')->where('id_permintaan_hc', $params->id_permintaan_hc)->first();
-		$paket    		= DB::table('paket_hc')->where('id_paket_hc', $permintaan->paket_hc_id)->first();
+		$price = 0;
+		$permintaan = DB::table('permintaan_hc')->where('id_permintaan_hc', $params->id_permintaan_hc)->first();
+		$layanan = DB::table('layanan_permintaan_hc as lphc')
+			->leftJoin('layanan_hc as lhc','lhc.id_layanan_hc','lphc.layanan_id')
+			->where('lphc.permintaan_id', $permintaan->id_permintaan_hc)->get();
+		foreach ($layanan as $key => $val) {
+			$price += $val->harga;
+			$layanan['total_price'] = $price;
+		}
 		$jumlahKm		= Helpers::calculateDistance($permintaan->latitude, $permintaan->longitude);
-		$biayaTotal  	= (int)$permintaan->biaya_layanan + (int)$permintaan->biaya_ke_lokasi;
+		$biayaTotal  	= $layanan['total_price'] + (int)$permintaan->biaya_ke_lokasi;
 		return [
-			'data' 		=> $permintaan,
-			'paket' 	=> $paket,
-			'jumlahKm'	=> $jumlahKm." Km",
+			'data' 	   => $permintaan,
+			'layanan'  => $layanan,
+			'jumlahKm' => $jumlahKm." Km",
 			'total'		=> $biayaTotal
+		];
+	}
+	# Callback pendaftaran mcu
+	public static function callbackRegistTelemedicine($params)
+	{
+		$permintaan =  DB::table('permintaan_telemedicine')->where('id_permintaan_telemedicine', $params->id_permintaan_telemedicine)->first();
+
+		return [
+			'data' 		=> $permintaan
 		];
 	}
 	# Generate no antrian
@@ -145,12 +231,11 @@ class Helpers{
 		return $nextAntri = "$prefix".$angkaAntri;
 	}
 	# Menghitung jarak dari rsud wahidin ke lokasi pasien
-	public static function calculateDistance($latitude, $longitude)
-    {
-        $lat1 = "-7.4906403"; // latitude rsud wahidin
-        $lon1 = "112.4178198"; // longitude rsud wahidin
-        $lat2 = $latitude;
-        $lon2 = $longitude;
+	public static function calculateDistance($latitude, $longitude, $latitude2=-7.4906403,$longitude2=112.4178198) {
+        $lat1 = (int)$latitude2;
+        $lon1 = (int)$longitude2;
+        $lat2 = (int)$latitude;
+        $lon2 = (int)$longitude;
 
         $theta = $lon1 - $lon2;
         $miles = (sin(deg2rad($lat1))) * sin(deg2rad($lat2)) + (cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta)));
@@ -169,97 +254,6 @@ class Helpers{
 			$user=User::where('telepon',$param)->first();
 		}
 		return $user;
-	}
-	# Text Berhasil Send OTP
-	public static function textSendOtp($otp){
-		$text = "Kode OTP anda adalah *$otp*";
-		return $text;
-	}
-	# Message send otp
-	public static function messageSenderOtp($params){
-		$prepareMessage = [[ # Array 2 dimensi
-			'phone' => $params->phone,
-			'message' => $params->message,
-		]];
-		if(isset($params->toAdmin) && $params->toAdmin === true){ # toAdmin === true >> gagal kirim pesan ke pasien, jadi kirimkan ke admin
-			$prepareMessage[0]['phone'] = config('webhook.phone'); # Replace nomor pasien jadi nomor admin
-			if(count($nomorAdmin = ChatBotReport::limit(5)->get()) > 0){ # Jika $nomorAdmin ada, replace value $prepareMessage
-				$prepareMessage = []; # Set value jadi array kosong
-				foreach($nomorAdmin as $key => $val){
-					$forPush = [
-						'phone' => $val->phone,
-						'message' => $params->message,
-					];
-					array_push($prepareMessage,$forPush);
-				}
-			}
-		}
-		$payload = [
-			'payload' => ["data" => $prepareMessage],
-			'token' => config('webhook.key'),
-			'url' => config('webhook.send.type.message'),
-		];
-		return Requestor::sendMultipleChat($payload); # Send message to admin
-	}
-	# Prepare message for SYSTEM ERROR
-	public static function sendErrorSystemToAdmin($params = []){
-		date_default_timezone_set('Asia/Jakarta');
-		try{
-			$title = isset($params['title']) ? strtoupper($params['title']) : 'SYSTEM ERROR';
-			$text = "*$title*";
-			$text .= "\n*DATE :* _".date('d-m-Y')."_";
-			$text .= "\n*TIME :* _".date('H:i:s')."_";
-
-			$message = isset($params['message']) ? $params['message'] : 'Terjadi kesalahan sistem';
-			$arrKeys = ['url','file','line','message','data'];
-			foreach($arrKeys as $key => $val){
-				if(isset($params[$val])){
-					$upper = strtoupper($val);
-					if($val=='data'){
-						$text .= "\n*$upper :* ".json_encode($params[$val],JSON_PRETTY_PRINT);
-					}else if($val=='message'){
-						$text .= "\n*$upper :* _".$message."_";
-					}else{
-						$text .= "\n*$upper :* _".$params[$val]."_";
-					}
-				}
-			}
-			return self::messageSenderError(['message' => $text]);
-		}catch(\Throwable $e){
-			$arrLog = [
-				'title'   => 'FAILED PREPARE MESSAGE FOR SYSTEM ERROR',
-				'url'     => request()->url(),
-				'file'    => $e->getFile(),
-				'line'    => $e->getLine(),
-				'message' => $e->getMessage(),
-			];
-			Helpers::logging($arrLog); # Log info
-		}
-	}
-	# Message send error otp
-	public static function messageSenderError($params = []){
-		$phone = config('webhook.phone'); # Nomor admin get from ENV
-		$text = isset($params['message']) ? $params['message'] : "_Terjadi kesalahan sistem_";
-		$prepareMessage = [[ # Array 2 dimensi
-			'phone' => $phone,
-			'message' => $text,
-		]];
-		if(count($nomorAdmin = ChatBotReport::limit(5)->get()) > 0){ # Jika $nomorAdmin ada, replace value $prepareMessage
-			$prepareMessage = []; # Set value jadi array kosong
-			foreach($nomorAdmin as $key => $val){
-				$forPush = [
-					'phone' => $val->phone,
-					'message' => $text,
-				];
-				array_push($prepareMessage,$forPush);
-			}
-		}
-		$payload = [
-			'payload' => ["data" => $prepareMessage],
-			'token' => config('webhook.key'),
-			'url' => config('webhook.send.type.message'),
-		];
-		return Requestor::sendMultipleChat($payload); # Send message to admin
 	}
 	# Custom response start
 	public static function resInternal($msg,$code=500,$data=[]){ # Template rest internal
@@ -304,8 +298,17 @@ class Helpers{
 		}
 		return response()->json($payload,$code);
 	}
+	public static function custom_response($code, $status, $msg, $data){ # Rest api with http response
+		return response()->json([
+			'metaData' => [
+				'code' => $code,
+				'status' => $status,
+				'message' => $msg,
+			],
+			'response' => $data,
+		], $code);
+	}
 	# Custom response end
-	
 	# Logging start
 	public static function logging($param=[]){
 		# Modify parameter for logging start
@@ -333,6 +336,43 @@ class Helpers{
 		];
 		if($status){ # If $status => true, unset key
 			unset($res[$title]['messageErr'],$res[$title]['line']);
+		}
+		Log::info(json_encode($res, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+		return true;
+	}
+	public static function custom_logging($param=[]){ # Parameter using key-value
+		$keyForLog = ['status','url','file','title','message','line','data']; # Declar key param log, tambahkan value di baris ini jika ingin menambah parameter untuk log
+		$arr = [];
+		# Modify params for logging start
+		foreach($keyForLog as $key => $val){
+			$arr[$val] = isset($param[$val]) ? $param[$val] : ( # Cek key, apakah sudah di set
+				$val=='status' ? false : ( # Jika key "status" belum di-set, isi value menjadi "false" :bool
+					$val=='title' ? 'NO TITLE' : (
+						$val=='message' ? 'NO MESSAGES' : '-'
+					)
+				)
+			);
+		}
+		# Modify params for logging end
+
+		$status = $arr['status']; # Status : true{program berhasil}, false{program gagal / program berhasil tapi data tidak ditemukan}
+		$url    = $arr['url'];
+		$file   = $arr['file'];
+		$title  = $arr['title'];
+		$error  = $arr['message'];
+		$line   = $arr['line'];
+		$data   = $arr['data'];
+		$res = [
+			$title => [
+				'url'     => $url,
+				'file'    => $file,
+				'message' => $error,
+				'line'    => $line,
+				'data'    => $data,
+			]
+		];
+		if($status){ # $status == true => unset key {"error","line"}
+			unset($res[$title]['file'],$res[$title]['message'],$res[$title]['line']);
 		}
 		Log::info(json_encode($res, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 		return true;

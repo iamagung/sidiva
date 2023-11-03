@@ -12,4 +12,5 @@ class TmCustomer extends Model
     protected $table = 'tm_customer';
     protected $primaryKey = "KodeCust";
     public $timestamps = false;
+    public $incrementing = false;
 }

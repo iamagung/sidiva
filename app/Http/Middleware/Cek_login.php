@@ -22,9 +22,12 @@ class Cek_login
         }
         $user = Auth::user();
 
+        if($user->level == 'admin')
+        return $next($request);
+    
         if($user->level == $roles)
         return $next($request);
 
-        return redirect('login')->with('error',"kamu gak punya akses");
+        // return redirect('login')->with('error',"kamu gak punya akses");
     }
 }

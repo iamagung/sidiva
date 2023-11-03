@@ -21,26 +21,11 @@ class ApiPendaftaranMcuController extends Controller
 
     public function getLayananMcu($param)
     {
-        $data = LayananMcu::where('jenis_layanan', $param)->get();
+        $data = LayananMcu::where('kategori_layanan', strtoupper($param))->get();
         if (count($data) > 0) {
-            $respon = [
-                'metaData' => [
-                    "code" => 200,
-                    "message" => 'Berhasil'
-                ],
-                'response' => $data
-            ];
-        } else {
-            $respon = [
-                'metaData' => [
-                    "code" => 500,
-                    "message" => 'Data Tidak Ditemukan'
-                ],
-                'response' => []
-            ];
+            return Help::custom_response(200, "success", "Berhasil", $data);
         }
-
-        return response()->json($respon);
+        return Help::custom_response(404, "error", "Data not found.", null);
     }
 
     public function getDetailLayananMcu($id)

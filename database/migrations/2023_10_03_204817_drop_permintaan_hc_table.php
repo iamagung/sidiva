@@ -14,9 +14,7 @@ class DropPermintaanHcTable extends Migration
     public function up()
     {
         Schema::table('permintaan_hc', function (Blueprint $table) {
-            $table->dropColumn('paket_hc_id');
-            $table->dropColumn('no_bpjs');
-            $table->dropColumn('no_rujukan');
+            $table->dropColumn(['paket_hc_id','no_bpjs','no_rujukan','layanan_hc_id','biaya_layanan','tenaga_medis_id']);
         });
     }
 

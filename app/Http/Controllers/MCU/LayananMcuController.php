@@ -18,9 +18,29 @@ class LayananMcuController extends Controller
     public function main()
     {
         if(request()->ajax()){
-            $data = LayananMcu::orderBy('id_layanan','DESC')->get();
+            $data = LayananMcu::orderBy('id_layanan','ASC')->get();
 			return DataTables::of($data)
 				->addIndexColumn()
+                ->addColumn('modifyNama', function($row){
+					$data = $row->nama_layanan;
+					return $txt = "<p>$data</p>";
+				})
+                ->addColumn('modifyDesc', function($row){
+					$data = $row->deskripsi ? (strlen($row->deskripsi) > 10 ? substr($row->deskripsi,0,30).'...' : $row->deskripsi) : '-';
+					return $txt = "<p>$data</p>";
+				})
+                ->addColumn('modifyKategori', function($row){
+					$data = "MCU - ".$row->kategori_layanan;
+					return $txt = "<p>$data</p>";
+				})
+                ->addColumn('formatHarga', function($row){
+					$data = "Rp.".number_format($row->harga,0,',','.');
+                    return $txt = "<p>$data</p>";
+				})
+                ->addColumn('modifyJenis', function($row){
+					$data = $row->jenis_layanan;
+					return $txt = "<p>$data</p>";
+				})
 				->addColumn('actions', function($row){
 					$txt = "
                       <button class='btn btn-sm btn-primary' title='Edit' onclick='formAdd(`$row->id_layanan`)'><i class='fadeIn animated bx bxs-file' aria-hidden='true'></i></button>
@@ -28,10 +48,7 @@ class LayananMcuController extends Controller
 					";
 					return $txt;
 				})
-                ->addColumn('formatHarga', function($row){
-					return $format = "Rp.".number_format($row->harga,0,',','.');
-				})
-				->rawColumns(['actions'])
+				->rawColumns(['actions','modifyNama','formatHarga','modifyDesc','modifyKategori','modifyJenis'])
 				->toJson();
 		}
         $data['title'] = $this->title;
@@ -54,6 +71,7 @@ class LayananMcuController extends Controller
     public function store(Request $request)
     {
         $rules = array(
+            'jenis_layanan' => 'required',
             'deskripsi' => 'required',
             'harga' => 'required',
             'nama_layanan' => 'required',
@@ -72,23 +90,21 @@ class LayananMcuController extends Controller
                 } else {
                     $data = LayananMcu::where('id_layanan', $request->id)->first();
                 }
-                $data->jenis_layanan    = $request->kategori_layanan;
+                $data->kategori_layanan = $request->kategori_layanan;
                 $data->nama_layanan     = $request->nama_layanan;
                 $data->harga            = preg_replace("/[^0-9]/", "", $request->harga);
                 $data->deskripsi        = $request->deskripsi;
+                $data->jenis_layanan    = $request->jenis_layanan;
+                $data->maksimal_peserta = ($request->maksimal_peserta)?$request->maksimal_peserta:null;
                 $data->save();
 
                 if ($data) {
-                    $return = ['code' => 200, 'type' => 'succes', 'status' => 'success', 'message' => 'Data Berhasil Di simpan'];
-                } else {
-                    $return = ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Di simpan'];
+                    return ['code' => 200, 'type' => 'succes', 'status' => 'success', 'message' => 'Data Berhasil Di simpan'];
                 }
-                return $return;
+                return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Di simpan'];
             } catch (\Throwable $e) {
-                # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
                 $log = ['ERROR SIMPAN LAYANAN ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
                 Help::logging($log);
-    
                 return Help::resApi('Terjadi kesalahan sistem',500);
             }
         }

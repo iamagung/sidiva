@@ -2,10 +2,6 @@
 
 @push('style')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-<!-- Or for RTL support -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.rtl.min.css" />
 @endpush
 @section('content')
 <div class="page-content">
@@ -24,7 +20,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-3">
-                    <button type="button" class="btn btn-sm" style="background: #4E5FBC; color: #ffffff;" onclick="formAdd()"><i class="bx bxs-plus-square"></i> Tambah Tenaga Medis</button>
+                    <button type="button" class="btn btn-sm" style="background: #4E5FBC; color: #ffffff;" onclick="formAdd()"><i class="bx bxs-plus-square"></i> Tambah Nakes</button>
                 </div>
                 <div class="col-md-3"></div>
                 <div class="col-md-3"></div>
@@ -36,12 +32,13 @@
                     <table id="datatabel" class="table table-striped table-bordered" width="100%">
                         <thead>
                             <tr>
-                                <td>No</td>
-                                <td>Nama</td>
-                                <td>Layanan Home Care</td>
+                                <td class="text-center">No</td>
+                                <td>Nama Tenaga Kesehatan</td>
+                                <td>Jenis Nakes</td>
                                 {{-- <td>No. Telepon</td> --}}
-                                <td>Status</td>
-                                <td>Opsi</td>
+                                <td>Layanan Homecare</td>
+                                <td class="text-center">Status</td>
+                                <td class="text-center">Opsi</td>
                             </tr>
                         </thead>
                         <tbody>
@@ -51,12 +48,11 @@
             </div>
         </div>
     </div>
-    <div class="other-page"></div>
+    <div id="modalForm"></div>
 </div>
 @endsection
 
 @push('script')
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js" integrity="sha512-BkpSL20WETFylMrcirBahHfSnY++H2O1W+UnEEO4yNIl+jI2+zowyoGJpbtk6bx97fBXf++WJHSSK2MV4ghPcg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="text/javascript">
@@ -70,6 +66,7 @@
             scrollX: true,
             searching: true,
             paging: true,
+            ordering: false,
             processing: true,
             serverSide: true,
             columnDefs: [
@@ -82,33 +79,24 @@
                 },
             ],
             ajax: {
-                url: "{{route('mainTenagaMedis')}}",
+                url: "{{route('nakesHomecare')}}",
             },
             columns: [
                 { data: "DT_RowIndex", name: "DT_RowIndex"},
-                { data: "namaTM", name: "namaTM"},
-                { data: "jenis_layanan", name: "jenis_layanan"},
+                { data: "nama_nakes", name: "nama_nakes"},
+                { data: "jenis_nakes", name: "jenis_nakes"},
                 // { data: "telepon", name: "telepon"},
-                { data: "status", name: "status"},
+                { data: "layanan", name: "layanan"},
+                { data: "stts", name: "stts"},
                 { data: "actions", name: "actions", class: "text-center"},
             ],
         })
     }
 
     function formAdd(id='') {
-        $('.main-layer').hide();
-        $.post("{{route('formTenagaMedis')}}", {id:id})
-        .done(function(data){
-			if(data.status == 'success'){
-				$('.other-page').html(data.content).fadeIn();
-			} else {
-				$('.main-layer').show();
-			}
-		})
-        .fail(() => {
-            $('.other-page').empty();
-            $('.main-layer').show();
-        })
+        $.post("{{route('formNakesHomecare')}}",{id:id},function(data){
+			$("#modalForm").html(data.content);
+		});
     }
 
     function hapus(id) {
@@ -123,7 +111,7 @@
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
-                $.post("{{route('deleteTenagaMedis')}}",{id:id})
+                $.post("{{route('deleteNakesHomecare')}}",{id:id})
                 .done((data) => {
                     if(data.status == "success"){
                         Swal.fire('Berhasil!', 'Berhasil Menghapus Data', 'success');

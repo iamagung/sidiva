@@ -29,6 +29,9 @@ class CreatePengaturanTelemedicineTable extends Migration
             $table->string('sabtuTutup')->nullable();
             $table->string('mingguBuka')->nullable();
             $table->string('mingguTutup')->nullable();
+            $table->integer('biaya_per_km');
+            $table->string('jarak_maksimal', 255);
+            $table->text('informasi_pembatalan');
             $table->timestamps();
         });
     }

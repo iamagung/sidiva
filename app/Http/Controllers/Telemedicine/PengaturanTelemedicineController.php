@@ -37,6 +37,7 @@ class PengaturanTelemedicineController extends Controller
         if ($request->jarak_maksimal == null) {
             return ['code' => 500, 'status' => 'warning', 'message' => 'Jarak Maksimal Wajib Diisi'];
         }
+        // return $request;
         $pengaturan = PengaturanTelemedicine::all();
         if (count($pengaturan) > 0) {
             PengaturanTelemedicine::truncate();
@@ -72,7 +73,8 @@ class PengaturanTelemedicineController extends Controller
         }
         $data->biaya_per_km     = preg_replace("/[^0-9]/", "", $request->biaya_per_km);
         $data->jarak_maksimal   = $request->jarak_maksimal;
-        $data->batas_waktu      = $request->batas_waktu;
+        // $data->batas_waktu      = $request->batas_waktu;
+        $data->informasi_pembatalan = $request->deskripsi;
         $data->save();
 
         if ($data) {

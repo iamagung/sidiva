@@ -21,17 +21,13 @@ class Authentication extends Model
 		return ($save) ? $save : false;
 	}
 	public static function check_otp($params){
-		$col_where = ($params->kirim_via == 'wa') ? ['id', $params->wa] : ['email', $params->email];
 		return Authentication::where([
-			$col_where,
 			['otp', $params->kode_otp],
 			['expired', '0'],
 		])->first();
 	}
 	public static function update_expired($params){
-		$col_where = ($params->kirim_via == 'wa') ? ['id', $params->wa] : ['id', $params->email];
 		$cek = Authentication::where([
-			$col_where,
 			['otp', $params->kode_otp],
 			['expired', '0'],
 		])->first();

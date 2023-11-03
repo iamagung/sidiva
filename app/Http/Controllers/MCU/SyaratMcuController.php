@@ -31,17 +31,14 @@ class SyaratMcuController extends Controller
     {
         if (empty($request->id)) {
 			$syarat = new SyaratMcu;
+            $syarat->isi = $request->isi;
+            $syarat->save();
 		}else{
-			$syarat = SyaratMcu::where('id_syarat_mcu', $request->id)->first();
+			$syarat = SyaratMcu::where('id_syarat_mcu',1)->update(['isi' => $request->isi]);
 		}
-		$syarat->isi = $request->isi;
-		$syarat->save();
-
-		if ($syarat) {
-			$data = ['code' => 200, 'status' => 'success', 'message' => 'Berhasil Menyimpan Data'];
-		}else{
-			$data = ['code' => 201, 'status' => 'success', 'message' => 'Gagal Menyimpan Data'];
+        if ($syarat) {
+			return ['code' => 200, 'status' => 'success', 'message' => 'Berhasil Menyimpan Data'];
 		}
-		return $data;
+        return ['code' => 201, 'status' => 'success', 'message' => 'Gagal Menyimpan Data'];
     }
 }

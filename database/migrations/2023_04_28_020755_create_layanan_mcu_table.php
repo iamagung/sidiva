@@ -15,7 +15,7 @@ class CreateLayananMcuTable extends Migration
     {
         Schema::create('layanan_mcu', function (Blueprint $table) {
             $table->bigIncrements('id_layanan');
-            $table->string('jenis_layanan');
+            $table->string('kategori_layanan');
             $table->string('nama_layanan');
             $table->text('deskripsi');
             $table->integer('harga');

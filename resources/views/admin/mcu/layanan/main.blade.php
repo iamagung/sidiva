@@ -6,16 +6,19 @@
 @section('content')
 <div class="page-content">
     <!-- judul dan link -->
-    <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-3">
-        <div class="pe-3">
+    <div class="row page-breadcrumb d-none d-sm-flex align-items-center mb-3">
+        <div class="pe-3 col-md-10">
             <span style="font-weight: bold;">{{$title}}<span>
+        </div>
+        <div class="pe-3 col-md-2 justify-content-end">
+            <span style="color: #787878;">Medical Check Up<span>
         </div>
     </div>
 
     <!-- main content -->
     <div class="card main-layer">
         <div class="card-header">
-            <h5>Layanan MCU</h5>
+            <h5>Tabel Tenaga Kesehatan</h5>
         </div>
         <div class="card-body">
             <div class="row">
@@ -33,10 +36,11 @@
                         <thead>
                             <tr>
                                 <td>No</td>
+                                <td>Nama Layanan Pemeriksaan</td>
+                                <td>Kategori</td>
+                                <td>Harga (1 Orang)</td>
                                 <td>Jenis Layanan</td>
-                                <td>Nama Layanan</td>
                                 <td>Deskripsi</td>
-                                <td>Harga</td>
                                 <td>Opsi</td>
                             </tr>
                         </thead>
@@ -81,10 +85,11 @@
             },
             columns: [
                 { data: "DT_RowIndex", name: "DT_RowIndex"},
-                { data: "jenis_layanan", name: "jenis_layanan"},
-                { data: "nama_layanan", name: "nama_layanan"},
-                { data: "deskripsi", name: "deskripsi"},
+                { data: "modifyNama", name: "modifyNama"},
+                { data: "modifyKategori", name: "modifyKategori"},
                 { data: "formatHarga", name: "formatHarga"},
+                { data: "modifyJenis", name: "modifyJenis"},
+                { data: "modifyDesc", name: "modifyDesc"},
                 { data: "actions", name: "actions", class: "text-center"},
             ],
         })

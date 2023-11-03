@@ -12,6 +12,8 @@ use App\Models\PengaturanHC;
 use App\Models\SyaratHC;
 use App\Models\TenagaMedis;
 use App\Models\TransaksiHC;
+use App\Models\User;
+use App\Models\LayananPermintaanHc;
 use App\Helpers\Helpers as Help;
 use DataTables, Validator, DB, Auth, Hash;
 
@@ -25,137 +27,46 @@ class ApiPendaftaranHcController extends Controller
         try {
             $data = LayananHC::all();
             if (count($data) > 0) {
-                $respon = [
-                    'metaData' => [
-                        "code" => 200,
-                        "message" => 'Berhasil'
-                    ],
-                    'response' => $data
-                ];
-            } else {
-                $respon = [
-                    'metaData' => [
-                        "code" => 500,
-                        "message" => 'Data Tidak Ditemukan'
-                    ],
-                    'response' => []
-                ];
+                return Help::custom_response(200, "success", "Ok", $data);
             }
-
-            return response()->json($respon);
+            return Help::custom_response(500, "error", "data tidak ditemukan", null);
         } catch (\Throwable $e) {
-            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
             $log = ['ERROR GET LAYANAN HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
-
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-    // public function getPaketHC(Request $request)
-    // {
-    //     try{
-    //         $data = PaketHC::all();
-    //         if (count($data) > 0) {
-    //             $respon = [
-    //                 'metaData' => [
-    //                     "code" => 200,
-    //                     "message" => 'Berhasil'
-    //                 ],
-    //                 'response' => $data
-    //             ];
-    //         } else {
-    //             $respon = [
-    //                 'metaData' => [
-    //                     "code" => 500,
-    //                     "message" => 'Data Tidak Ditemukan'
-    //                 ],
-    //                 'response' => []
-    //             ];
-    //         }
-
-    //         return response()->json($respon);
-    //     } catch (\Throwable $e) {
-    //         # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
-    //         $log = ['ERROR GET PAKET HC ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
-    //         Help::logging($log);
-
-    //         return Help::resApi('Terjadi kesalahan sistem',500);
-    //     }
-    // }
     public function getDetailLayananHC(Request $request)
     {
         try {
-            if (!empty($request->id_layanan_hc)) {
-                $data = LayananHC::where('id_layanan_hc', $request->id_layanan_hc)->first();
-                if (!empty($data)) {
-                    $respon = [
-                        'metaData' => [
-                            "code" => 200,
-                            "message" => 'Berhasil'
-                        ],
-                        'response' => $data
-                    ];
-                } else {
-                    $respon = [
-                        'metaData' => [
-                            "code" => 201,
-                            "message" => 'Data Tidak Ditemukan.'
-                        ],
-                        'response' => []
-                    ];
-                }
-            } else {
-                $respon = [
-                    'metaData' => [
-                        "code" => 500,
-                        "message" => 'Terjadi Kesalahan Sistem'
-                    ],
-                    'response' => []
-                ];
+            if(!$request->id_layanan_hc){ # wajib send param id layanan
+                return Help::custom_response(500, "error", "id layanan wajib diisi", null);
             }
-            return response()->json($respon);
+            $data = LayananHC::where('id_layanan_hc', $request->id_layanan_hc)->first();
+            if(!$data){ #Jika tidak ada data
+                return Help::custom_response(500, "error", "data tidak ditemukan", null);
+            }
+            return Help::custom_response(200, "success", "Ok", $data);
         } catch (\Throwable $e) {
-            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
             $log = ['ERROR GET DETAIL PAKET HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
-
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-    public function getSyaratAturanHC(Request $request)
-    {
+    public function getSyaratAturanHC(Request $request) {
         try{
             $data = SyaratHC::where('id_syarat_hc', 1)->first();
-            if (!empty($data)) {
-                $respon = [
-                    'metaData' => [
-                        "code" => 200,
-                        "message" => 'Berhasil'
-                    ],
-                    'response' => $data
-                ];
-            } else {
-                $respon = [
-                    'metaData' => [
-                        "code" => 500,
-                        "message" => 'Data Tidak Ditemukan'
-                    ],
-                    'response' => []
-                ];
+            if (!$data) {
+                return Help::custom_response(500, "error", "data tidak ditemukan", null);
             }
-
-            return response()->json($respon);
+            return Help::custom_response(200, "success", "Ok", $data);
         } catch (\Throwable $e) {
-            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
             $log = ['ERROR GET SYARAT & ATURAN HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
-
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-    public function pesanJadwalHC(Request $request)
-    {
-        // return 'test';
+    public function pesanJadwalHC(Request $request) {
         $validate = Validator::make($request->all(),[
             'nik' => 'required',
             'nama' => 'required',
@@ -166,7 +77,9 @@ class ApiPendaftaranHcController extends Controller
             'telepon' => 'required',
             'latitude' => 'required',
             'longitude' => 'required',
-            'layanan_id' => 'required'
+            'layanan_id' => 'required',
+            'tanggal_kunjungan' => 'required',
+            'waktu_layanan' => 'required'
         ],[
             'nik.required' => 'NIK Wajib Diisi',
             'nama.required' => 'Nama Lengkap Wajib Di isi',
@@ -175,111 +88,113 @@ class ApiPendaftaranHcController extends Controller
             'jenis_kelamin.required' => 'Jenis Kelamin Wajib Di isi',
             'alamat.required' => 'Alamat Wajib Di isi',
             'telepon.required' => 'Telepon Wajib Di isi',
-            'jenis_layanan.required' => 'Jenis Layanan Wajib Di isi',
             'latitude.required' => 'Lokasi Wajib Diisi',
-            'longitude.required' => 'Lokasi Wajib Diisi'
+            'longitude.required' => 'Lokasi Wajib Diisi',
+            'layanan_id.required' => 'Jenis Layanan Wajib Di isi',
+            'tanggal_kunjungan.required' => 'Tanggal Kunjungan Wajib Diisi',
+            'waktu_layanan.required' => 'Waktu Layanan Wajib Diisi'
         ]);
         if (!$validate->fails()) {
-            $tanggal = strtotime(date('Y-m-d'));
+			$day = date('D');
+            $timeCur = date('H:i');
+            $tanggal = date('Y-m-d');
             $tanggalKunjungan = date('Y-m-d', strtotime($request->tanggal_kunjungan));
-            $check_nik = $this->checkByNik($request->nik, $request->tanggal_kunjungan);
-            if ($check_nik > 0) {
-                return response()->json([
-                    'metadata' => [
-                        'message' => 'Nik telah digunakan untuk mendaftar pada tanggal '.$this->tgl_indo($request->tanggal_kunjungan),
-                        'code'    => 201,
-                    ],
-                    'response' => [],
-                ]);
+            if($tanggalKunjungan<$tanggal){# Jika tanggal periksa kemarin{back date}
+                return Help::resApi('Tanggal sudah terlewat.',500);
             }
-			$dayName = date('D',strtotime($request->tanggal_kunjungan));
+            # Menghitung selisih hari antara tanggal order dan tanggal pendaftaran
+            $selisih_hari = strtotime($tanggal) - strtotime($tanggalKunjungan);
+            $selisih_hari = $selisih_hari / (60 * 60 * 24); # Menghitung selisih hari
+            if ($selisih_hari > -1 || $selisih_hari < -3) { #Pengecekan pendaftaran hanya bisa (H-3) - (H-1)
+                return Help::resApi('Pendaftaran bisa dilakukan H-3 sampai H-1',500);
+            }
+            if ($check_nik = $this->checkByNik($request->nik, $tanggalKunjungan) > 0) {# pengecekan agar tidak dobel
+                return Help::custom_response(500, "error", 'Nik telah digunakan untuk mendaftar pada tanggal '.$this->tgl_indo($tanggalKunjungan), null);
+            }
             $pengaturan = PengaturanHC::where('id_pengaturan_hc', 1)->first();
-            if ($dayName == 'Mon') { # Senin
+            if ($day == 'Mon') { # Senin
                 if ($pengaturan->seninBuka == '' || $pengaturan->seninTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->seninBuka) {
+                    if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->seninBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->seninBuka,201);
-                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->seninTutup) {
+                    } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->seninTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->seninTutup,201);
                     }
                 }
             }
-            if ($dayName == 'Tue') { # Selasa
+            if ($day == 'Tue') { # Selasa
                 if ($pengaturan->selasaBuka == '' || $pengaturan->selasaTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->selasaBuka) {
+                    if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->selasaBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->selasaBuka,201);
-                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->selasaTutup) {
+                    } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->selasaTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->selasaTutup,201);
                     }
                 }
             }
-            if ($dayName == 'Wed') { # Rabu
+            if ($day == 'Wed') { # Rabu
                 if ($pengaturan->rabuBuka == '' || $pengaturan->rabuTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->rabuBuka) {
+                    if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->rabuBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->rabuBuka,201);
-                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->rabuTutup) {
+                    } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->rabuTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->rabuTutup,201);
                     }
                 }
             }
-            if ($dayName == 'Thu') { # Kamis
+            if ($day == 'Thu') { # Kamis
                 if ($pengaturan->kamisBuka == '' || $pengaturan->kamisTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->kamisBuka) {
+                    if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->kamisBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->kamisBuka,201);
-                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->kamisTutup) {
+                    } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->kamisTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->kamisTutup,201);
                     }
                 }
             }
-            if ($dayName == 'Fri') { # Jum'at
+            if ($day == 'Fri') { # Jum'at
                 if ($pengaturan->jumatBuka == '' || $pengaturan->jumatTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->jumatBuka) {
+                    if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->jumatBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->jumatBuka,201);
-                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->jumatTutup) {
+                    } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->jumatTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->jumatTutup,201);
                     }
                 }
             }
-            if ($dayName == 'Sat') { # Sabtu
+            if ($day == 'Sat') { # Sabtu
                 if ($pengaturan->sabtuBuka == '' || $pengaturan->sabtuTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',201);
                 } else {
-                    if ($request->tanggal_kunjungan==$tanggal && $timeCur<$pengaturan->sabtuBuka) {
+                    if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->sabtuBuka) {
                         return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->sabtuBuka,201);
-                    } else if($request->tanggal_kunjungan==$tanggal && $timeCur>$pengaturan->sabtuTutup) {
+                    } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->sabtuTutup) {
                         return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->sabtuTutup,201);
                     }
                 }
             }
-			if($dayName == 'Sun'){ # If tanggal periksa adalah hari minggu
+			if($day == 'Sun'){ # If tanggal periksa adalah hari minggu
 				return Help::resApi('Tidak bisa mengambil antrian pada hari minggu.',201);
 			}
-            if($tanggalKunjungan<$tanggal){ # If tanggal periksa kemarin{back date}
-                return Help::resApi('Tanggal sudah terlewat.',201);
-            }
             $pasien = TmCustomer::where('NoKtp','=',$request->nik)->first();
             if (strlen($request->nik)!=16) {
                 return Help::resApi('NIK tidak sesuai standar 16 digit.',201);
             }
             try {
+                DB::beginTransaction();
                 $data = new PermintaanHC;
-                $data->layanan_hc_id     = $request->layanan_id;
                 $data->no_rm             = !empty($pasien) ? $request->no_rm : null;
                 $data->nik               = !empty($pasien) ? $pasien->NoKtp : $request->nik;
                 $data->no_registrasi     = Help::generateNoRegHc($request);
                 $data->nama              = !empty($pasien) ? $pasien->NamaCust : strtoupper($request->nama);
                 $data->alamat            = !empty($pasien) ? $pasien->Alamat : $request->alamat;
-                $data->tempat_lahir      = !empty($request->no_bpjs) ? $request->no_bpjs : null;
-                $data->tanggal_lahir     = !empty($pasien) ? $pasien->TglLahir : $request->tanggal_lahir;
+                $data->tempat_lahir      = $request->tempat_lahir;
+                $data->tanggal_lahir     = !empty($pasien) ? date('Y-m-d', strtotime($pasien->TglLahir)) : date('Y-m-d', strtotime($request->tanggal_lahir));
                 $data->tanggal_order     = $tanggal;
                 $data->tanggal_kunjungan = $tanggalKunjungan;
                 $data->alergi_pasien     = $request->alergi_pasien;
@@ -288,49 +203,38 @@ class ApiPendaftaranHcController extends Controller
                 $data->jenis_pembayaran  = $request->jenis_pembayaran;
                 $data->no_telepon        = !empty($pasien) ? $pasien->Telp : $request->telepon;
                 $data->jenis_kelamin     = !empty($pasien) ? $pasien->JenisKel : $request->jenis_kelamin;
+                $data->waktu_layanan     = $request->waktu_layanan;
                 $data->status_pasien     = 'belum';
+                $data->status_pembayaran = 'pending';
+                # Start calculate
+                $biayaPerKm = DB::table('pengaturan_hc')->where('id_pengaturan_hc', 1)->first()->biaya_per_km;
+                $distance   = Help::calculateDistance($request->latitude,$request->longitude);
+                $data->biaya_ke_lokasi = (int)$biayaPerKm * (int)$distance;
+                # End calculate 
                 $data->save();
-
-                if ($data) {
-                    # Update Biaya layanan & biaya ke lokasi
-                    $biayaPerKm = DB::table('pengaturan_hc')->where('id_pengaturan_hc', 1)->first()->biaya_per_km;
-                    $distance   = Help::calculateDistance($data->latitude, $data->longitude);
-                    $upData     = PermintaanHC::where('id_permintaan_hc', $data->id_permintaan_hc)->first();
-                    $upData->biaya_layanan   = PaketHC::where('id_paket_hc', $data->paket_hc_id)->first()->harga;
-                    $upData->biaya_ke_lokasi = (int)$biayaPerKm * (int)$distance;
-                    $upData->save();
-
-                    return response()->json([
-                        'metadata' => [
-                            'message' => 'Success',
-                            'code'    => 200,
-                        ],
-                        'response' => Help::callbackRegistHc($data),
-                    ]);
-                }else{
-                    return response()->json([
-                        'metadata' => [
-                            'message' => 'Error',
-                            'code'    => 201,
-                        ],
-                        'response' => [],
-                    ]);
+                if (!$data) {
+                    DB::rollback();
+                    return Help::custom_response(500, "error", 'Pendaftaran homecare gagal', null);
                 }
+                foreach ($request->layanan_id as $key => $val) {
+                    $data2 = new LayananPermintaanHc;
+                    $data2->permintaan_id = $data->id_permintaan_hc;
+                    $data2->layanan_id = $val;
+                    $data2->save();
+                    if (!$data) {
+                        DB::rollback();
+                        return Help::custom_response(500, "error", 'Error save layanan homecare', null);
+                    }
+                }
+                DB::commit();
+                return Help::custom_response(200, "success", "Ok.", Help::callbackRegistHc($data));
             } catch (\Throwable $e) {
-                # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
-                $log = ['ERROR PENDAFTARAN MCU ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+                $log = ['ERROR PENDAFTARAN HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
                 Help::logging($log);
-
                 return Help::resApi('Terjadi kesalahan sistem',500);
             }
         }else{
-            return response()->json([
-                'metadata' => [
-                    'message' => $validate->errors()->all()[0],
-                    'code'    => 500,
-                ],
-                'response' => [],
-            ]);
+            return Help::custom_response(200, "error", $validate->errors()->all()[0], null);
         }
     }
     // public function getListPembayaranHC($id)
@@ -434,30 +338,13 @@ class ApiPendaftaranHcController extends Controller
             $data = PermintaanHC::where('id_permintaan_hc', $request->id_permintaan_hc)->first();
             $data->status_pasien = 'selesai';
             $data->save();
-            if ($data) {
-                $respon = [
-                    'metaData' => [
-                        "code" => 200,
-                        "message" => 'Berhasil'
-                    ],
-                    'response' => $data
-                ];
-            } else {
-                $respon = [
-                    'metaData' => [
-                        "code" => 500,
-                        "message" => 'Terjadi kesalahan sistem'
-                    ],
-                    'response' => []
-                ];
+            if (!$data) {
+                return Help::custom_response(500, "error", 'Gagal menyelesaikan permintaan homecare', null);
             }
-
-            return response()->json($respon);
+            return Help::custom_response(200, "success", 'Ok', $data);
         } catch (\Throwable $e) {
-            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
             $log = ['ERROR SELESAIKAN PELAYANAN HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
-
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
@@ -468,30 +355,13 @@ class ApiPendaftaranHcController extends Controller
             $data = PermintaanHC::where('id_permintaan_hc', $request->id_permintaan_hc)->first();
             $data->status_pasien = 'batal';
             $data->save();
-            if ($data) {
-                $respon = [
-                    'metaData' => [
-                        "code" => 200,
-                        "message" => 'Berhasil'
-                    ],
-                    'response' => $data
-                ];
-            } else {
-                $respon = [
-                    'metaData' => [
-                        "code" => 500,
-                        "message" => 'Terjadi kesalahan sistem'
-                    ],
-                    'response' => []
-                ];
-            }
-
-            return response()->json($respon);
+            if (!$data) {
+                return Help::custom_response(500, "error", 'Gagal membatalkan permintaan homecare', null);
+            } 
+            return Help::custom_response(200, "success", 'Ok', $data);
         } catch (\Throwable $e) {
-            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
             $log = ['ERROR SELESAIKAN PELAYANAN HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
-
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
@@ -578,30 +448,14 @@ class ApiPendaftaranHcController extends Controller
     public function getProfileTM(Request $request)
     {
         try {
-            $data = DB::connection('dbapm')->table('users')->where('id', $request->id)->first();
-
-            if (!empty($data)) {
-                return [
-                    'metaData' => [
-                        "code" => 200,
-                        "message" => 'Data Ditemukan'
-                    ],
-                    'response' => $data
-                ];
-            } else {
-                return [
-                    'metaData' => [
-                        "code" => 201,
-                        "message" => 'Data Tidak Ditemukan'
-                    ],
-                    'response' => []
-                ];
+            $data = User::where('id', $request->id)->first();
+            if ($data) {
+                return Help::custom_response(200, "success", "found", $data);
             }
+            return Help::custom_response(404, "error", "Data not found.", null);
         } catch (\Throwable $e) {
-            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
             $log = ['ERROR GET USER TM ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
-
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }

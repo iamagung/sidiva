@@ -16,7 +16,7 @@ class CreateTenagaMedisHomecareTable extends Migration
         Schema::create('tenaga_medis_homecare', function (Blueprint $table) {
             $table->bigIncrements('id_tenaga_medis');
             $table->string('jenis_nakes');
-            $table->string('nama_nakes');
+            $table->integer('nakes_id');
             $table->string('layanan_id');
             $table->timestamps();
         });

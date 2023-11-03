@@ -70,9 +70,9 @@ class PengaturanHCController extends Controller
             $data->mingguBuka   = $request->buka7;
             $data->mingguTutup  = $request->tutup7;
         }
-        $data->biaya_per_km     = preg_replace("/[^0-9]/", "", $request->biaya_per_km);
-        $data->jarak_maksimal   = $request->jarak_maksimal;
-        // $data->batas_waktu      = $request->batas_waktu;
+        $data->biaya_per_km         = preg_replace("/[^0-9]/", "", $request->biaya_per_km);
+        $data->jarak_maksimal       = $request->jarak_maksimal;
+        $data->informasi_pembatalan = $request->deskripsi;
         $data->save();
 
         if ($data) {

@@ -6,16 +6,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Authentication;
-use App\Models\TmCustomer;
+use App\Models\UsersAndroid;
 use Twilio\Rest\Client;
 use App\Helpers\Helpers as Help;
-use Validator, DB, Auth, Hash;
+use Validator, DB, Auth, Hash, Log;
 
 class ApiAuthController extends Controller
 {
     private static $file = 'ApiAuthController.php';
-
-    public function registerPasien(Request $request) {
+    
+    public function register(Request $request) {
         $validate = Validator::make($request->all(),[
             'nik' => 'required',
             'nama' => 'required',
@@ -44,74 +44,91 @@ class ApiAuthController extends Controller
                 return Help::resApi('No.Telepon Sudah Pernah Didaftarkan.',201);
             }
             try {
-                return 'ok';
                 DB::beginTransaction();
+                $check_nik = $this->checkNIK($request->nik);
+                if ($check_nik > 0) {
+                    return Help::resApi('NIK sudah terdaftar.',500);
+                }
                 $data = new User; #Save to users
                 $data->name             = strtoupper($request->nama);
                 $data->username         = $request->nik;
                 $data->level            = 'pasien';
-                $data->password         = $request->nik;
+                $data->password         = bcrypt($request->nik);
                 $data->lihat_password   = $request->nik;
                 $data->telepon          = $request->telepon;
                 $data->save();
-
-                if ($data) {
-                    # save to dbsimars=>tmcustomer
-                    $checkCustomer = TmCustomer::where('NoKtp',$request->nik)->first();
-                    if ($checkCustomer) {
-                        $customer = $checkCustomer;
-                    } else {
-                        $customer = new TmCustomer;
-                        $customer->KodeCust = Help::generateRM();
-                        $customer->NoKtp    = $request->nik;
-                    }
-                    $customer->NamaCust = strtoupper($request->nama);
-                    $customer->Tempat   = $request->tempat_lahir;
-                    $customer->TglLahir = date('Y-m-d', strtotime($request->tanggal_lahir));
-                    $customer->JenisKel = $request->jenis_kelamin;
-                    $customer->Alamat   = $request->alamat;
-                    $customer->Telp     = $request->telepon;
-                    $customer->save();
-                    if (!$customer) {
-                        return Help::resApi('Gagal Menyimpan Data Customer.',201);
-                        DB::rollback();
-                    }
-                    DB::commit();
-                    return response()->json([
-                        'metadata' => [
-                            'message' => 'Berhasil',
-                            'code'    => 200,
-                        ],
-                        'response' => User::where('username',$request->nik)->first(),
-                    ]);
-                }else{
-                    return response()->json([
-                        'metadata' => [
-                            'message' => 'Error',
-                            'code'    => 201,
-                        ],
-                        'response' => [],
-                    ]);
+                if (!$data) {
+                    DB::rollback();
+                    return Help::resApi('Registrasi gagal.',500);
                 }
+                $data2 = new UsersAndroid; #Save to users android
+                $data2->user_id         = $data->id;
+                $data2->nik             = $request->nik;
+                $data2->tempat_lahir    = $request->tempat_lahir;
+                $data2->tanggal_lahir   = date('Y-m-d', strtotime($request->tanggal_lahir));
+                $data2->jenis_kelamin   = $request->jenis_kelamin;
+                $data2->alamat          = $request->alamat;
+                $data2->save();
+                if (!$data2) {
+                    DB::rollback();
+                    return Help::resApi('Gagal menyimpan ke users android.',500);
+                }
+                $token = $data->createToken('auth_token')->plainTextToken;
+                DB::commit();
+                return response()->json([
+                    'metadata' => [
+                        'message'       => 'Berhasil',
+                        'code'          => 200,
+                        'access_token'  => $token,
+                        'token_type'    => 'Bearer'
+                    ],
+                    'response' => $data,
+                ]);
             } catch (\Throwable $e) {
                 # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
                 $log = ['ERROR REGISTER PASIEN ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
-                Help::logging($log);
+                Help::custom_logging($log);
                 return Help::resApi('Terjadi kesalahan sistem',500);
             }
         }else{
+            return Help::resApi($validate->errors()->all()[0],500);
+        }
+    }
+    public function login(Request $request)
+    {
+        if (!Auth::attempt($request->only('username', 'password'))) {
+            return Help::resApi('Unauthorized.',401);
+        }
+        try {
+            $user = User::where('username', $request->username)->first();
+            if (!$user) {
+                return Help::resApi('User not found.',500);
+            }
+            $token = $user->createToken('auth_token')->plainTextToken;
             return response()->json([
                 'metadata' => [
-                    'message' => $validate->errors()->all()[0],
-                    'code'    => 500,
+                    'message'       => 'User found',
+                    'code'          => 200,
+                    'access_token'  => $token,
+                    'token_type'    => 'Bearer'
                 ],
-                'response' => [],
+                'response' => $user,
             ]);
+        } catch (\Throwable $e) {
+            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
+            $log = ['ERROR REGISTER PASIEN ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::custom_logging($log);
+            return Help::resApi('Terjadi kesalahan sistem',500);
         }
+    }
+    public function logout()
+    {
+        auth()->user()->tokens()->delete();
+        return Help::resApi('You have successfully logged out and the token was successfully deleted',200);
     }
     public function sendOtp(Request $request) {
         $arrAdmin = [ # For send error notif to WhatsApp Admin
-			'title' => 'LINK CHECK-IN DATA NOT FOUND',
+			'title' => 'ERROR SEND OTP',
 			'url'   => $request->url(),
 			'file'  => self::$file,
 			'data'  => $request->all(),
@@ -121,33 +138,61 @@ class ApiAuthController extends Controller
             $request->otp = rand(10000, 99999);
             $request->tgljam = date('Y-m-d H:i:s');
             $insert_auth = Authentication::insert($request);
-            if($insert_auth){
-                // $callback = ['otp'=>$insert_auth->otp,'notelp'=>$insert_auth->wa];
-                $request->request->add([ # For Helpers::messageSenderAntrian()
-                    'message' => Help::textNomorAntrianPasien($insert_auth->otp),
-                    'phone' => $insert_auth->wa
-                ]);
-                $sendOtp = Helpers::messageSenderOtp($request);
-                foreach($sendOtp->data->messages as $key => $val){
-                    if(!$val->status){
-                        DB::rollback();
-                        $arrAdmin['title'] = 'WHATSAPP OTP FAILED';
-                        $arrAdmin['data'] = ['phone'=>$insert_auth->wa,'otp'=>$insert_auth->otp];
-                        $arrAdmin['message'] = "Kode OTP gagal dikirim ke WA pasien wa.me/$insert_auth->wa";
-                        Helpers::sendErrorSystemToAdmin($arrAdmin); # Send notif error to wa admin
-                        $request->request->add(['toAdmin' => true]); # For Helpers::messageSenderAntrian()
-                        Helpers::messageSenderAntrian($request); # Nomor antrian yang gagal dikirim ke pasien, akan di kirim ke admin
-                        Helpers::logging($arrAdmin);
-                        return Helpers::resApi('Send OTP gagal, silahkan coba lagi',500);
-                    }
-                }
-                DB::commit();
-                return Helpers::resApi('Send OTP Berhasil berhasil',200);
+            if(!$insert_auth){
+                return Help::resApi('Gagal menyimpan authentication.',500);
 			}
+            $request->request->add([ # For Helpers::messageSenderOtp()
+                'otp' => $insert_auth->otp,
+                'phone' => $insert_auth->wa
+            ]);
+            $sendOtp = Help::messageSenderOtp($request);
+            // if ($sendOtp->status==false) { # Jika gagal send otp
+            //     DB::rollback();
+            //     $arrAdmin['title'] = 'WHATSAPP OTP FAILED';
+            //     $arrAdmin['data'] = ['phone'=>$insert_auth->wa,'otp'=>$insert_auth->otp];
+            //     $arrAdmin['message'] = "Kode OTP gagal dikirim ke WA pasien "."$insert_auth->wa";
+            //     Help::custom_logging($arrAdmin);
+            //     return Help::resApi('Send OTP gagal, silahkan coba lagi',500);
+            // }
+            DB::commit();
+            return Help::resApi('Send OTP Berhasil berhasil',200);
         } catch (\Throwable $e) {
             $log = ['ERROR SEND OTP ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
+    }
+    public function verifyOtp(Request $request){
+        try {
+			$cek = Authentication::check_otp($request);
+			if ($cek) {
+				if (date('Y-m-d H:i:s') > date('Y-m-d H:i:s', strtotime($cek->tanggal_waktu.'+ 2 hours')))
+                    return Help::custom_response(410, "error", "OTP Expired!", null);
+                    
+                Authentication::update_expired($request);
+				$user = User::leftJoin('users_android as ua','ua.user_id','users.id')
+					->where('users.telepon', '=', $cek->wa)
+					->first();
+				return $this->set_token($user);
+			}
+
+			return Help::custom_response(404, "error", "Not Found / Expired", null);
+		} catch (\Throwable $e) {
+			return Help::custom_response(500, "error", $e->getMessage(), null);
+		}
+    }
+    public function set_token($user){
+		$token = $user->createToken('auth_token')->plainTextToken;
+		$data = [
+			'message' => 'success',
+			'bearer_token' => $token,
+			'user' => $user,
+		];
+
+		return Help::custom_response(200, "success", "OK", $data);
+	}
+    public function checkNIK($nik) { //check nik apakah sudah digunakan
+        $check = User::where('username','=',$nik)->count();
+        return $check;
     }
 }

@@ -14,7 +14,7 @@ class PermintaanMcuController extends Controller
 {
     function __construct()
 	{
-		$this->title = 'Permintaan Baru';
+		$this->title = 'Permintaan Telemedicine';
 	}
 
     public function main(Request $request)

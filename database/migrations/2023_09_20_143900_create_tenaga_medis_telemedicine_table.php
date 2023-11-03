@@ -16,8 +16,9 @@ class CreateTenagaMedisTelemedicineTable extends Migration
         Schema::create('tenaga_medis_telemedicine', function (Blueprint $table) {
             $table->bigIncrements('id_tenaga_medis');
             $table->string('jenis_nakes');
-            $table->integer('poli_id');
-            $table->string('nama_nakes');
+            $table->string('poli_id',10);
+            // $table->string('nama_nakes');
+            $table->string('nakes_id');
             $table->string('no_telepon');
             $table->timestamps();
         });

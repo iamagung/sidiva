@@ -13,26 +13,41 @@
 @section('content')
 <div class="page-content">
     <!-- judul dan link -->
-    <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-3">
-        <div class="pe-3">
+    <div class="row page-breadcrumb d-none d-sm-flex align-items-center mb-3">
+        <div class="pe-3 col-md-10">
             <span style="font-weight: bold;">{{$title}}<span>
+        </div>
+        <div class="pe-3 col-md-2 justify-content-end">
+            <span style="color: #787878;">Medical Check Up<span>
         </div>
     </div>
 
     <!-- main content -->
     <div class="card main-layer">
         <div class="card-header">
-            <h5>Permintaan MCU</h5>
+            <h5>Tabel Permintaan Telemedicine</h5>
         </div>
         <div class="card-body">
-            <div class="row" style="margin-top: 2rem">
-                <div class="col-md-4"></div>
-                <div class="col-md-4"></div>
+            {{-- <div class="row">
                 <div class="col-md-4">
                     <label>Tanggal MCU</label>
                     <input type="date" id="tanggal" class="form-control">
                 </div>
-            </div>
+                <div class="col-md-2">
+                    <label>Status</label>
+                    <select name="status" id="status" class="form-control single-select">
+                        <option value="">-Pilih-</option>
+                        <option value="all">Semua</option>
+                        <option value="belum">Belum</option>
+                        <option value="proses">Proses</option>
+                        <option value="menunggu">Menunggu</option>
+                        <option value="batal">Batal</option>
+                        <option value="selesai">Selesai</option>
+                    </select>
+                </div>
+                <div class="col-md-4"></div>
+                <div class="col-md-2"></div>
+            </div> --}}
             <div class="row" style="margin-top: 2rem">
                 <div class="table-responsive">
                     <table id="datatabel" class="table table-striped table-bordered" width="100%">
@@ -40,13 +55,14 @@
                             <tr>
                                 <td>No</td>
                                 <td>Tanggal Order</td>
-                                <td>Nama Pasien</td>
-                                <td>Jenis Pasien</td>
-                                <td>Tanggal MCU</td>
+                                <td>No. RM</td>
+                                <td>Nama Pemesan</td>
                                 <td>Jenis MCU</td>
-                                <td>Nama Layanan</td>
-                                <td>Pemeriksaan</td>
+                                <td>Layanan MCU</td>
+                                <td>Jumlah Pasien</td>
+                                <td>Pilihan Tanggal</td>
                                 <td>Pembayaran</td>
+                                <td>Status</td>
                                 <td>Opsi</td>
                             </tr>
                         </thead>
@@ -68,6 +84,9 @@
 <script type="text/javascript">
     $(document).ready(function() {
 		$(".knob").knob();
+        $(".single-select").select2({
+            theme: 'bootstrap-5'
+        });
         var date = new Date();
         var day = date.getDate();
         var month = date.getMonth() + 1;
@@ -85,6 +104,7 @@
 
     function loadTable(tanggal = null){
         var table = $('#datatabel').DataTable({
+            "dom": "<'row'<'col-sm-2'l><'col-sm-4 datesearchbox'><'col-sm-3 status'><'col-sm-3'f>>",
             scrollX: true,
             searching: true, 
             paging: true,
@@ -109,15 +129,18 @@
                 { data: "DT_RowIndex", name: "DT_RowIndex"},
                 { data: "tanggal_order", name: "tanggal_order"},
                 { data: "nama", name: "nama"},
-                { data: "jenis_pembayaran", name: "jenis_pembayaran"},
-                { data: "tanggal_kunjungan", name: "tanggal_kunjungan"},
                 { data: "jenis_layanan", name: "jenis_layanan"},
                 { data: "nama_layanan", name: "nama_layanan"},
+                { data: "jenis_pembayaran", name: "jenis_pembayaran"},
                 { data: "deskripsi", name: "deskripsi"},
+                { data: "tanggal_kunjungan", name: "tanggal_kunjungan"},
                 { data: "pembayaran", name: "pembayaran"},
+                { data: "status_pasien", name: "status_pasien"},
                 { data: "actions", name: "actions", class: "text-center"},
             ],
         })
+        $("div.datesearchbox").html('<div class="col"><div class="row mb-3"><label  class="col-sm-3 col-form-label">Tanggal MCU</label><div class="col-sm-6"><input type="date" id="tanggal" class="form-control"></div></div></div>');
+        $("div.status").html('<div class="col"><div class="row mb-3"><label  class="col-sm-2 col-form-label">Status</label><div class="col-sm-8"><select name="status" id="status" class="form-control single-select"><option value="">- Pilih -</option><option value="all">Semua</option><option value="belum">Belum</option><option value="proses">Proses</option><option value="menunggu">Menunggu</option><option value="batal">Batal</option><option value="selesai">Selesai</option></select></div>');
     }
 
     function filterByDate() {

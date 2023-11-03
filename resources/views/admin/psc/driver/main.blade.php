@@ -55,8 +55,6 @@
         </div>
         <div id="modalForm"></div>
     </div>
-    <div class="other-page"></div>
-    <div class="col-12 modal-dialog"></div>
 </div>
 @endsection
 

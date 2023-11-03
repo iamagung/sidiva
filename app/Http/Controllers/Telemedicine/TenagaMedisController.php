@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Telemedicine;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\TenagaMedisTelemedicine;
 use App\Models\TenagaMedis;
 use App\Models\LayananTelemedicine;
+use App\Models\JadwalTenagaMedis;
 use App\Models\Dokter;
+use App\Models\DBRANAP\Users as UserRanap;
+use App\Models\DBRSUD\TmPoli;
 use App\Helpers\Helpers as Help;
 use DataTables, Validator, DB, Auth;
 
@@ -20,38 +24,60 @@ class TenagaMedisController extends Controller
     public function main()
     {
         if(request()->ajax()){
-            $data = TenagaMedis::orderBy('id_tenaga_medis','DESC')->get();
+            $data = TenagaMedisTelemedicine::select('id_tenaga_medis', 'tenaga_medis_telemedicine.poli_id', 'tenaga_medis_telemedicine.jenis_nakes', 'tenaga_medis_telemedicine.tarif', 'no_telepon', 'status', 'tenaga_medis_telemedicine.nakes_id')
+                ->with('tmPoli:KodePoli,NamaPoli')
+                ->with('user_ranap:id,name as nama_nakes')
+                ->orderBy('id_tenaga_medis','DESC')
+                ->get(); 
+            // return $data;
 			return DataTables::of($data)
 				->addIndexColumn()
 				->addColumn('actions', function($row){
 					$txt = "
-                      <button class='btn btn-sm btn-primary' title='Edit' onclick='formAdd(`$row->id_tenaga_medis`)'><i class='fadeIn animated bx bxs-file' aria-hidden='true'></i></button>
+                      <button class='btn btn-sm btn-primary' title='Edit' onclick='formAdd(`$row->id_tenaga_medis`)'><i class='fadeIn animated bx bxs-edit' aria-hidden='true'></i></button>
                       <button class='btn btn-sm btn-danger' title='Delete' onclick='hapus(`$row->id_tenaga_medis`)'><i class='fadeIn animated bx bxs-trash' aria-hidden='true'></i></button>
 					";
 					return $txt;
 				})
-                ->addColumn('jenis_layanan', function($row){
-					if (!empty($row->layanan_id)) {
-                        $text = LayananTelemedicine::where('id_layanan_Telemedicine', $row->layanan_id)->first()->nama_layanan;
+                ->addColumn('poli_layanan', function($row){
+                    return $row->tmPoli->NamaPoli;
+                })
+                ->addColumn('nama_nakes', function($row){
+                  //   return $row->userRanap->nama_nakes;
+                    return $row->user_ranap?$row->user_ranap->nama_nakes:'-';
+                })
+                ->addColumn('jadwal', function($row){
+                    $jadwal = JadwalTenagaMedis::where('nakes_id', $row->nakes_id)->where('jenis_pelayanan', 'telemedicine')->get();
+					$text = "";
+                    if(count($jadwal) > 0) {
+                        foreach ($jadwal as $key => $value) {
+                            $text.="<span>".date_format(date_create($value->jam_awal), "H:i")."-".date_format(date_create($value->jam_akhir), "H:i")."</span><br>";
+                        }
                     } else {
-                        $text = '-';
+                        $text = "-";
                     }
                     return $text;
 				})
-                ->addColumn('namaTM', function($row){
-					if (!empty($row->kode_dokter)) {
-                        $text = DB::connection('dbwahidin')->table('tm_setupall')->where('groups','Dokter')
-                            ->where('setupall_id', $row->kode_dokter)->first()->nilaichar;
+                ->addColumn('tarif', function($row){
+					if($row->jenis_nakes == 'dokter') {
+                        setlocale(LC_MONETARY,"id");
+                        return money_format("Rp %i", $row->tarif);
                     } else {
-                        $text = '-';
+                        return '-';
                     }
-                    return $text;
 				})
-				->rawColumns(['actions'])
+                ->addColumn('status', function($row){
+                    if($row->status == 'melayani') {
+                        return "<span class='fw-bold text-danger'>".strtoupper($row->status)."</span>";
+                    } else {
+                        return "<span >".strtoupper($row->status)."</span>";
+                    }
+				})
+				->rawColumns(['actions','status','jadwal'])
 				->toJson();
 		}
         $data['title'] = $this->title;
-        return view('admin.homecare.tenagamedis.main', $data);
+        return view('admin.telemedicine.tenagamedis.main', $data);
     }
 
     public function form(Request $request)
@@ -59,56 +85,156 @@ class TenagaMedisController extends Controller
         if (empty($request->id)) {
             $data['tenaga_medis'] = '';
             $data['title'] = "Tambah ".$this->title;
+            $data['jadwal_tenaga_medis'] = [];
 		}else{
-			$data['tenaga_medis'] = TenagaMedis::where('id_tenaga_medis', $request->id)->first();
+			$data['tenaga_medis'] = TenagaMedisTelemedicine::where('id_tenaga_medis', $request->id)->first();
             $data['title'] = "Edit ".$this->title;
 		}
-        $data['layanan'] = LayananTelemedicine::all();
-        # Start Get Dokter
-        $data['getTenagaMedis'] = TenagaMedis::all();
-        $arrDokter = [];
-		foreach ($data['getTenagaMedis'] as $key => $v) {
-			$getKdDokter = $v->kode_dokter;
-			array_push($arrDokter, $getKdDokter);
-		}
-        $data['dokter'] = DB::connection('dbwahidin')->table('tm_setupall')->whereNotIn('setupall_id', $arrDokter)
-            ->where('groups','Dokter')->where('nilaichar', '!=', '')->get();
+        if($data['tenaga_medis']){
+            $data['jadwal_tenaga_medis'] = JadwalTenagaMedis::where('nakes_id',$data['tenaga_medis']['nakes_id'])->get();
+            // return $data;
+        }
+        // return $data;
+        $data['jenisNakes'] = ['dokter', 'perawat'];
+        
+        $data['getTenagaMedis'] = UserRanap::select('id','name','level_user')
+            ->has('tenaga_medis_telemedicine')
+            ->get();
+        $data['getPoliLayanan'] = TmPoli::join('mapping_poli_bridging as mpd', 'tm_poli.KodePoli', '=', 'mpd.kdpoli_rs')
+            ->select('KodePoli as id_poli','NamaPoli as nama_poli')
+            ->get();
+        // return $data['getPoliLayanan'];
         # End Get Dokter
-        $content = view('admin.homecare.tenagamedis.form', $data)->render();
+        $content = view('admin.telemedicine.tenagamedis.modal', $data)->render();
 		return ['status' => 'success', 'content' => $content, 'data' => $data];
     }
 
     public function store(Request $request)
     {
-        $rules = array(
-            'kode_dokter' => 'required',
-            // 'telepon' => 'required',
-            'layanan_id' => 'required',
-        );
+        // return $request->jadwal;
+        if($request->jenis_nakes == 'perawat') {
+            $rules = array(
+                'jenis_nakes' => 'required',
+                'poli_id' => 'required',
+                'nakes_id' => 'required',
+                'no_telepon' => 'required',
+            );
+        } else {
+            $rules = array(
+                'jenis_nakes' => 'required',
+                'poli_id' => 'required',
+                'nakes_id' => 'required',
+                'tarif' => 'required|numeric',
+                'no_telepon' => 'required',
+            );
+        }
+        
         $messages = array(
-            'required'  => 'Kolom Harus Diisi',
+            'jenis_nakes.required'  => 'Kolom Jenis Tenaga Kesetan Harus Diisi',
+            'poli_id.required'  => 'Kolom Poli Layanan Harus Diisi',
+            'nakes_id.required'  => 'Kolom Tenaga Medis Harus Diisi',
+            'tarif.required'  => 'Kolom Tarif Harus Diisi',
+            'no_telepon.required'  => 'Kolom Nomor Telepon Harus Diisi',
+            'tarif.numeric' => 'Kolom Tarif Harus Format Angka',
         );
         $valid = Validator::make($request->all(), $rules,$messages);
         if($valid->fails()) {
             return ['status' => 'error', 'code' => 400, 'message' => $valid->messages()];
         } else {
             try {
+                # Transaksi Start
+                # untuk insert tenaga medis dan jadwal dokter
+                DB::beginTransaction();
                 if (empty($request->id)) {
-                    $data = new TenagaMedis;
-                } else {
-                    $data = TenagaMedis::where('id_tenaga_medis', $request->id)->first();
-                }
-                $data->kode_dokter = $request->kode_dokter;
-                // $data->telepon     = $request->telepon;
-                $data->layanan_id  = $request->layanan_id;
-                $data->status      = ($request->is_melayani == 'on') ? 'MELAYANI' : 'TIDAK MELAYANI';
-                $data->save();
+                    # Jika kondisi insert tenaga medis baru tetapi nakes_id telah digunakan
+                    $nakes = TenagaMedisTelemedicine::where('nakes_id', $request->nakes_id);
+                    if($nakes) {
+                        DB::rollback();
+                        return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Di simpan, ID Tenaga Kesehatan telah digunakan'];
+                    }
+                    $data = new TenagaMedisTelemedicine;
 
-                if ($data) {
+                } else {
+                    # Jika kondisi akan update tetapi data tidak ditemukan
+                    $data = TenagaMedisTelemedicine::where('id_tenaga_medis', $request->id)->first();
+                    if(!$data) {
+                        DB::rollback();
+                        return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Di simpan, ID Tenaga Kesehatan tidak ditemukan'];
+                    }
+                }
+                $data->nakes_id = $request->nakes_id;
+                $data->no_telepon = $request->no_telepon;
+                $data->poli_id = $request->poli_id;
+                $data->jenis_nakes = $request->jenis_nakes;
+                $data->tarif = $request->tarif ? $request->tarif : 0;
+                $data->save();
+                $commit_status = true;
+                
+                # Jika tenaga medis yang insertkan jenis dokter
+                # maka perlu insert jadwal di tabel jadwal_tenaga_medis
+                # jika jenis tenaga medis perawat maka tidak perlu jadwal
+                if($request->jenis_nakes == 'dokter' && isset($request->jadwal)) {
+
+                    # Cari jadwal lama yang akan digantikan dan di delete
+                    # jadi tidak menggunakan Builder update, melainkan digantikan
+                    $deleteJadwal = JadwalTenagaMedis::where('nakes_id', $request->nakes_id)
+                        ->where('jenis_pelayanan', 'telemedicine')
+                        ->get();
+                    
+                    if($deleteJadwal) {
+
+                        # Jika jadwal lama ada maka dihapus
+                        if(count($deleteJadwal) > 0){
+                            if(!$deleteJadwal = JadwalTenagaMedis::where('nakes_id', $request->nakes_id)->where('jenis_pelayanan', 'telemedicine')->delete())
+                            {
+                                # Jika gagal menghapus
+                                $commit_status = false;
+                            }
+                        }
+                    }
+
+                    # Looping array jadwal yang baru dari request
+                    foreach ($request->jadwal as $key => $value) {
+                        
+                        # Insert jadwal baru
+                        $jadwal = new JadwalTenagaMedis();
+                        $jadwal->jam_awal = $value['awal'];
+                        $jadwal->jam_akhir = $value['akhir'];
+                        $jadwal->jenis_pelayanan = 'telemedicine';
+                        $jadwal->nakes_id = $request->nakes_id;
+                        $jadwal->save();
+
+                        # Jika gagal simpan
+                        if(!$jadwal) {
+                            $commit_status = false;
+                        }
+                    }
+
+                } else {
+                    # Jika jenis tenaga medis perawat, di cek jika memiliki jadwal
+                    $deleteJadwal = JadwalTenagaMedis::where('nakes_id', $request->nakes_id)
+                        ->where('jenis_pelayanan', 'telemedicine')
+                        ->get();
+                    if($deleteJadwal) {
+                        if(count($deleteJadwal) > 0){
+                            if(!$deleteJadwal = JadwalTenagaMedis::where('nakes_id', $request->nakes_id)->where('jenis_pelayanan', 'telemedicine')->delete())
+                            {
+                                $commit_status = false;
+                            }
+                        }
+                    }
+                }
+
+                if ($data && $commit_status) {
+                    # commit transaksi dan response success
+                    DB::commit();
                     $return = ['code' => 200, 'type' => 'succes', 'status' => 'success', 'message' => 'Data Berhasil Di simpan'];
                 } else {
+                    # rollback transaksi dan response success
+                    DB::rollback();
                     $return = ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Di simpan'];
                 }
+                # Transaksi End
                 return $return;
             } catch (\Throwable $e) {
                 # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
@@ -123,7 +249,8 @@ class TenagaMedisController extends Controller
     public function delete(Request $request)
     {
         try {
-            $data = TenagaMedis::where('id_tenaga_medis', $request->id)->first();
+            $data = TenagaMedisTelemedicine::where('id_tenaga_medis', $request->id)->first();
+            $jadwal = JadwalTenagaMedis::where('nakes_id',$data->nakes_id)->where('jenis_pelayanan', 'telemedicine')->delete();
             $data->delete();
     
             if ($data) {
@@ -134,10 +261,21 @@ class TenagaMedisController extends Controller
             return $return;
         } catch (\Throwable $e) {
             # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
-            $log = ['ERROR DELETE LAYANAN ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            $log = ['ERROR DELETE TENAGA MEDIS TELEMEDICINE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
 
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
+    }
+    public function getNakesTelemedicine(Request $request) 
+    {
+        $data = UserRanap::select('id','name','level_user')->whereDoesntHave('tenaga_medis_telemedicine')->where('level_user', $request->jenis);
+        $dataUpdate = UserRanap::select('id','name','level_user')->where('id',$request->selectedNakes)->where('level_user', $request->jenis)->union($data)->get();
+        $data = $dataUpdate;
+        // return $data;
+        if (count($data)>0) {
+            return Help::custom_response(200, "success", 'Ok', $data);
+        }
+        return Help::custom_response(500, "error", 'Data not found', null);
     }
 }

@@ -2,10 +2,10 @@
     <a href="javascript:void(0)" class="has-arrow text-white">
         <div class="parent-icon text-white"><i class="bx bx-first-aid"></i>
         </div>
-        <div class="menu-title">PSC</div>
+        <div class="menu-title">Ambulance</div>
     </a>
     <ul>
-        <li>
+        {{-- <li>
             <a href="{{ Route('mainPermintaanPsc')}}"><i class="bx bx-right-arrow-alt"></i>Permintaan PSC</a>
         </li>
         <li>
@@ -13,18 +13,18 @@
         </li>
         <li>
             <a href="{{ Route('mainLayananPsc')}}"><i class="bx bx-right-arrow-alt"></i>Layanan PSC</a>
-        </li>
+        </li> --}}
         <li>
             <a href="{{ route('mainEmergencyPsc')}}"><i class="bx bx-right-arrow-alt"></i>Call Emergency</a>
         </li>
         <li>
             <a href="{{ route('mainDriverPsc')}}"><i class="bx bx-right-arrow-alt"></i>Driver Ambulance</a>
         </li>
-        <li>
+        {{-- <li>
             <a href="{{ route('mainSyaratPsc')}}"><i class="bx bx-right-arrow-alt"></i>Syarat & Aturan</a>
         </li>
         <li>
             <a href="{{ route('mainPengaturanPsc')}}"><i class="bx bx-right-arrow-alt"></i>Pengaturan</a>
-        </li>
+        </li> --}}
     </ul>
 </li>

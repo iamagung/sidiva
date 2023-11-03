@@ -6,11 +6,14 @@
 @section('content')
 <div class="page-content">
     <!-- judul dan link -->
-    <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-3">
-        <div class="pe-3">
-            <span style="font-weight: bold;">{{$title}}<span>
+        <div class="row page-breadcrumb d-none d-sm-flex align-items-center mb-3">
+            <div class="pe-3 col-md-11">
+                <span style="font-weight: bold;">{{$title}}<span>
+            </div>
+            <div class="pe-3 col-md-1 justify-content-end">
+                <span>{{$title}}<span>
+            </div>
         </div>
-    </div>
 
     <!-- main content -->
     <div class="card main-layer">
@@ -18,26 +21,30 @@
             <h5>Riwayat MCU</h5>
         </div>
         <div class="card-body">
-            <div class="row" style="margin-top: 2rem">
+            {{-- <div class="row" style="margin-top: 2rem">
                 <div class="col-md-4"></div>
                 <div class="col-md-4"></div>
                 <div class="col-md-4">
                     <label>Tanggal MCU</label>
                     <input type="date" id="tanggal" class="form-control">
                 </div>
-            </div>
+            </div> --}}
             <div class="row" style="margin-top: 2rem">
                 <div class="table-responsive">
                     <table id="datatabel" class="table table-striped table-bordered" width="100%">
                         <thead>
                             <tr>
                                 <td>No</td>
-                                <td>Tanggal MCU</td>
+                                <td>Tanggal Order</td>
                                 <td>No. RM</td>
-                                <td>Nama Pasien</td>
+                                <td>Nama Pemesan</td>
                                 <td>Jenis MCU</td>
-                                <td>Pemeriksaan</td>
-                                <td>Hasil</td>
+                                <td>Layanan MCU</td>
+                                <td>Jumlah Pasien</td>
+                                <td>Surat Keterangan</td>
+                                <td>Pilihan Tanggal</td>
+                                <td>Status</td>
+                                <td>Tanggal Selesai</td>
                             </tr>
                         </thead>
                         <tbody>
@@ -74,9 +81,10 @@
 
     function loadTable(tanggal = null){
         var table = $('#datatabel').DataTable({
+            "dom": "<'row'<'col-sm-2'l><'col-sm-3 datesearchbox'><'col-sm-3 statusbox'><'col-sm-4'f>>" ,
             scrollX: true,
             searching: true, 
-            paging: true,
+            paging: true,   
             processing: true,
             serverSide: true,
             columnDefs: [
@@ -101,19 +109,22 @@
                 { data: "nama", name: "nama"},
                 { data: "jenis_layanan", name: "jenis_layanan"},
                 { data: "nama_layanan", name: "nama_layanan"},
+                { data: "nama_layanan", name: "nama_layanan"},
+                { data: "nama_layanan", name: "nama_layanan"},
+                { data: "nama_layanan", name: "nama_layanan"},
+                { data: "nama_layanan", name: "nama_layanan"},
                 { data: "actions", name: "actions", class: "text-center"},
             ],
-        })
+        });
+        $("div.datesearchbox").html('<div class="col"><div class="row mb-3"><label  class="col-sm-2 col-form-label">Tanggal</label><div class="col-sm-8"><input type="date" id="tanggal" class="form-control"></div></div></div>');
+        $("div.statusbox").html('<div class="col"><div class="row mb-3"><label  class="col-sm-2 col-form-label">Status</label><div class="col-sm-8"><select name="status" id="status" class="form-control single-select"><option value="">-Pilih-</option><option value="all">Semua</option><option value="belum">Belum</option><option value="proses">Proses</option><option value="menunggu">Menunggu</option><option value="batal">Batal</option><option value="selesai">Selesai</option></select></div>');
     }
-
-    function filterByDate() {
-        $("#tanggal").change(function (e) { 
+    $('#tanggal').change(function (e) { 
             e.preventDefault();
             $('#datatabel').DataTable().destroy();
             loadTable( $("#tanggal").val() );
         });
-    }
-
+        
     function downloadHasil(id) {
         alert('Maintenance')
     }

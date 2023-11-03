@@ -8,6 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class SyaratTelemedicine extends Model
 {
     use HasFactory;
-    protected $table = 'syarat_telemedicine';
-    protected $primryKey = 'id_syarat_telemedicine';
+    protected $table = 'syarat_aturan_telemedicine';
+    protected $primaryKey = 'id_syarat_aturan_telemedicine';
 }

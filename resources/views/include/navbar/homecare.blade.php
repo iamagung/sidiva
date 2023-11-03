@@ -12,14 +12,10 @@
             <a href="{{ route('mainRiwayatHC')}}"><i class="bx bx-right-arrow-alt"></i>Riwayat Home Care</a>
         </li>
         <li>
-            {{-- <a href="{{ route('indexLayananHC')}}"><i class="bx bx-right-arrow-alt"></i>Jenis Layanan</a> --}}
             <a href="{{ route('mainLayananHC')}}"><i class="bx bx-right-arrow-alt"></i>Jenis Layanan</a>
         </li>
         <li>
-            <a href="{{ route('mainPaketHC')}}"><i class="bx bx-right-arrow-alt"></i>Paket Home Care</a>
-        </li>
-        <li>
-            <a href="{{ route('mainTenagaMedis')}}"><i class="bx bx-right-arrow-alt"></i>Tenaga Medis</a>
+            <a href="{{ route('nakesHomecare')}}"><i class="bx bx-right-arrow-alt"></i>Tenaga Medis</a>
         </li>
         <li>
             <a href="{{ route('formPengaturanHC')}}"><i class="bx bx-right-arrow-alt"></i>Pengaturan</a>

@@ -22,7 +22,7 @@
             <h5>Permintaan Home Care</h5>
         </div>
         <div class="card-body">
-            <div class="row" style="margin-top: 2rem">
+            <div class="row">
                 <div class="col-md-4"></div>
                 <div class="col-md-2"></div>
                 <div class="col-md-2">
@@ -30,8 +30,9 @@
                     <select name="status" id="status" class="form-control">
                         <option value="">-Pilih-</option>
                         <option value="all">Semua</option>
-                        <option value="belum" selected>Belum</option>
+                        <option value="belum">Belum</option>
                         <option value="proses">Proses</option>
+                        <option value="menunggu">Menunggu</option>
                         <option value="batal">Batal</option>
                         <option value="selesai">Selesai</option>
                     </select>
@@ -47,13 +48,14 @@
                         <thead>
                             <tr>
                                 <td class="text-center">No</td>
-                                <td class="text-center">Tanggal Order</td>
+                                <td>Tanggal Order</td>
                                 <td class="text-center">No. RM</th>
-                                <td class="text-center">Nama Pasien</td>
-                                <td class="text-center">Lokasi Pasien</td>
-                                <td class="text-center">Layanan Home Care</td>
-                                <td class="text-center">Tanggal_kunjungan</td>
-                                <td class="text-center">Proses</td>
+                                <td>Nama Pasien</td>
+                                <td>Alamat Pasien</td>
+                                <td>Layanan Homecare</td>
+                                <td>Tanggal Mulai</td>
+                                <td>Pembayaran</td>
+                                <td class="text-center">Status</td>
                                 <td class="text-center">Opsi</td>
                             </tr>
                         </thead>
@@ -64,8 +66,7 @@
             </div>
         </div>
     </div>
-    <div class="other-page"></div>
-    {{-- <div class="col-12 modal-dialog"></div> --}}
+    <div class="col-12 modal-dialog"></div>
 </div>
 @endsection
 
@@ -96,6 +97,7 @@
         var table = $('#datatabel').DataTable({
             scrollX: true,
             searching: true,
+            ordering: false,
             paging: true,
             processing: true,
             serverSide: true,
@@ -117,13 +119,14 @@
             },
             columns: [
                 { data: "DT_RowIndex", name: "DT_RowIndex", class: "text-center"},
-                { data: "tanggal_order", name: "tanggal_order", class: "text-center"},
+                { data: "tanggal_order", name: "tanggal_order"},
                 { data: "noRm", name: "noRm", class: "text-center"},
-                { data: "nama", name: "nama", class: "text-center"},
-                { data: "lokasi", name: "lokasi", class: "text-center"},
-                { data: "layanan", name: "layanan", class: "text-center"},
-                { data: "tanggal_kunjungan", name: "tanggal_kunjungan", class: "text-center"},
-                { data: "proses", name: "proses", class: "text-center"},
+                { data: "nama", name: "nama"},
+                { data: "alamat", name: "alamat"},
+                { data: "layanan", name: "layanan"},
+                { data: "tanggal_kunjungan", name: "tanggal_kunjungan"},
+                { data: "pembayaran", name: "pembayaran"},
+                { data: "status", name: "status", class: "text-center"},
                 { data: "opsi", name: "opsi", class: "text-center"},
             ],
         })
@@ -143,52 +146,75 @@
             loadTable($("#tanggal").val(), $("#status").val());
         });
     }
-    function formAdd(id) {
-        $('.main-layer').hide();
-        $.post("{{route('formPermintaanHC')}}", {id:id})
-        .done(function(data){
-			if(data.status == 'success'){
-				$('.other-page').html(data.content).fadeIn();
-			} else {
-				$('.main-layer').show();
-			}
-		})
-        .fail(() => {
-            $('.other-page').empty();
-            $('.main-layer').show();
-        })
+    function pilih(id) {
+        $.post('{{ route("formPermintaanHC") }}',{id:id})
+        .done(function(data) {
+            if (data.status == 'success') {
+                $('.modal-dialog').html(data.content);
+            } else {
+                Swal.fire('Maaf',data.message,"warning");    
+            }
+        }).fail(function() {
+            Swal.fire('Oops!!',"Terjadi kesalahan sistem!","error");
+        });
+    }
+    
+    function detail(id) {
+        $.post('{{ route("formPermintaanHC") }}',{id:id,view:1})
+        .done(function(data) {
+            if (data.status == 'success') {
+                $('.modal-dialog').html(data.content);
+            } else {
+                Swal.fire('Maaf',data.message,"warning");    
+            }
+        }).fail(function() {
+            Swal.fire('Oops!!',"Terjadi kesalahan sistem!","error");
+        });
     }
 
-    // function formAdd(id) {
-    //     $.post('{{ route("formPermintaanHC") }}',{id:id})
-    //     .done(function(data) {
-    //         if (data.status == 'success') {
-    //             $('.modal-dialog').html(data.content);
-    //         } else {
-    //             Swal.fire('Maaf',data.message,"warning");    
-    //         }
-    //     }).fail(function() {
-    //         Swal.fire('Oops!!',"Terjadi kesalahan sistem!","error");
-    //     });
-    // }
-
-    function batal(id) {
+    function tolak(id) {
         Swal.fire({
-            title: 'Apakah Kamu Yakin?',
-            text: "Pasien Akan Dibatalkan",
+            title: 'Konfirmasi',
+            text: "Apakah anda yakin?",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#5A6268',
-            confirmButtonText: 'Konfirmasi, Batal',
-            cancelButtonText: 'Kembali'
+            confirmButtonText: 'Yakin',
+            cancelButtonText: 'Tidak'
         }).then((result) => {
             if (result.isConfirmed) {
-                $.post("{{route('batalPermintaanHC')}}",{id:id})
+                $.post("{{route('tolakPermintaanHc')}}",{id:id})
                 .done((data) => {
                     if(data.status == "success"){
                         Swal.fire('Berhasil!', data.message, 'success');
-                        location.reload();
+                        $('#datatabel').DataTable().ajax.reload();
+                    }else{
+                        Swal.fire('Maaf!', data.message, 'error');
+                    }
+                }).fail(() => {
+                    Swal.fire('Maaf!', 'Terjadi Kesalahan!', 'warning');
+                })
+            }
+        })
+    }
+    function terima(id) {
+        Swal.fire({
+            title: 'Konfirmasi',
+            text: "Apakah anda yakin?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#5A6268',
+            confirmButtonText: 'Yakin',
+            cancelButtonText: 'Tidak'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post("{{route('terimaPermintaanHc')}}",{id:id})
+                .done((data) => {
+                    if(data.status == "success"){
+                        Swal.fire('Berhasil!', data.message, 'success');
+                        $('#datatabel').DataTable().ajax.reload();
                     }else{
                         Swal.fire('Maaf!', data.message, 'error');
                     }

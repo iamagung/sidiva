@@ -12,14 +12,8 @@ class LoginController extends Controller
     public function index()
     {
         if ($user = Auth::user()) {
-            if ($user->level == 'admin') { #admin
+            if ($user) {
                 return redirect()->route('dashboard');
-            } else if($user->level == 'adminmcu') {#Admin mcu
-                return redirect()->route('dashboardMcu');
-            } else if($user->level == 'adminhomecare') {#Admin homecare
-                return redirect()->route('dashboardHomecare');
-            } else if($user->level == 'admintelemedis') {#Admin psc
-                return redirect()->route('dashboardTelemedicine');
             }
         }
         return view('include/login');
@@ -36,14 +30,8 @@ class LoginController extends Controller
             $kredensil = $request->only('username','password');
             if (Auth::attempt($kredensil)) {
                 $user = Auth::user();
-                if ($user->level == 'admin') { #admin
+                if ($user) {
                     return redirect()->route('dashboard');
-                } else if($user->level == 'adminmcu') {#Admin mcu
-                    return redirect()->route('dashboardMcu');
-                } else if($user->level == 'adminhomecare') {#Admin homecare
-                    return redirect()->route('dashboardHomecare');
-                } else if($user->level == 'admintelemedis') {#Admin telemedicine
-                    return redirect()->route('dashboardTelemedicine');
                 }
                 return redirect()->route('/');
             }

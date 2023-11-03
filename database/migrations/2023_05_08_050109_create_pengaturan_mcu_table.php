@@ -29,8 +29,7 @@ class CreatePengaturanMcuTable extends Migration
             $table->string('sabtuTutup')->nullable();
             $table->string('mingguBuka')->nullable();
             $table->string('mingguTutup')->nullable();
-            $table->string('liburNasionalBuka')->nullable();
-            $table->string('liburNasionalTutup')->nullable();
+            $table->text('informasi_pembatalan')->nullable();
             $table->timestamps();
         });
     }

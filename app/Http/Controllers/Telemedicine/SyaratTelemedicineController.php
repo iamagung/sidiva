@@ -19,7 +19,7 @@ class SyaratTelemedicineController extends Controller
     {
         $syaratAturan = SyaratTelemedicine::get();
         if (count($syaratAturan) > 0) {
-            $data['syarat'] = SyaratTelemedicine::where('id_syarat_telemedicine', 1)->first();
+            $data['syarat'] = SyaratTelemedicine::where('id_syarat_aturan_telemedicine', 1)->first();
         } else {
             $data['data'] = '';
         }
@@ -29,10 +29,11 @@ class SyaratTelemedicineController extends Controller
 
     public function store(Request $request)
     {
+        // return $request;
         if (empty($request->id)) {
 			$syarat = new SyaratTelemedicine;
 		}else{
-			$syarat = SyaratTelemedicine::where('id_syarat_telemedicine', $request->id)->first();
+			$syarat = SyaratTelemedicine::where('id_syarat_aturan_telemedicine', $request->id)->first();
 		}
 		$syarat->isi = $request->isi;
 		$syarat->save();

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\HC;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\TenagaMedis;
+use App\Models\TenagaMedisHomecare;
 use App\Models\LayananHC;
 use App\Models\Dokter;
 use App\Helpers\Helpers as Help;
@@ -12,15 +12,13 @@ use DataTables, Validator, DB, Auth;
 
 class TenagaMedisController extends Controller
 {
-    function __construct()
-	{
-		$this->title = 'Tenaga Medis';
+    function __construct() {
+		$this->title = 'Tenaga Medis Homecare';
 	}
 
-    public function main()
-    {
+    public function main() {
         if(request()->ajax()){
-            $data = TenagaMedis::orderBy('id_tenaga_medis','DESC')->get();
+            $data = TenagaMedisHomecare::orderBy('id_tenaga_medis','ASC')->get();
 			return DataTables::of($data)
 				->addIndexColumn()
 				->addColumn('actions', function($row){
@@ -30,22 +28,14 @@ class TenagaMedisController extends Controller
 					";
 					return $txt;
 				})
-                ->addColumn('jenis_layanan', function($row){
-					if (!empty($row->layanan_id)) {
-                        $text = LayananHC::where('id_layanan_hc', $row->layanan_id)->first()->nama_layanan;
-                    } else {
-                        $text = '-';
-                    }
-                    return $text;
+                ->addColumn('layanan', function($row){
+                    return LayananHC::where('id_layanan_hc', $row->layanan_id)->first()->nama_layanan;
 				})
-                ->addColumn('namaTM', function($row){
-					if (!empty($row->kode_dokter)) {
-                        $text = DB::connection('dbwahidin')->table('tm_setupall')->where('groups','Dokter')
-                            ->where('setupall_id', $row->kode_dokter)->first()->nilaichar;
-                    } else {
-                        $text = '-';
-                    }
-                    return $text;
+                ->addColumn('nama_nakes', function($row){
+                    return DB::connection('dbranap')->table('users')->where('id',$row->nakes_id)->first()->name;
+				})
+                ->addColumn('stts', function($row){
+                    return $row->status==false?'TIDAK MELAYANI':'MELAYANI';
 				})
 				->rawColumns(['actions'])
 				->toJson();
@@ -54,89 +44,70 @@ class TenagaMedisController extends Controller
         return view('admin.homecare.tenagamedis.main', $data);
     }
 
+    public function getNakes(Request $request) {
+        $data = DB::connection('dbranap')->table('users')
+            ->where('level_user', $request->jenis)
+            ->where('is_active',1)
+            ->get();
+        if (count($data)>0) {
+            return Help::custom_response(200, "success", 'Ok', $data);
+        }
+        return Help::custom_response(500, "error", 'Data not found', null);
+    }
     public function form(Request $request)
     {
         if (empty($request->id)) {
-            $data['tenaga_medis'] = '';
-            $data['title'] = "Tambah ".$this->title;
+            $data['title'] = "Tambah";
+            $data['data'] = '';
+            $data['nakes'] = '';
 		}else{
-			$data['tenaga_medis'] = TenagaMedis::where('id_tenaga_medis', $request->id)->first();
-            $data['title'] = "Edit ".$this->title;
+            $data['title'] = "Edit";
+			$data['data'] = TenagaMedisHomecare::where('id_tenaga_medis', $request->id)->first();
+            $data['nakes'] = $data['data']->nakes_id;
 		}
         $data['layanan'] = LayananHC::all();
-        # Start Get Dokter
-        $data['getTenagaMedis'] = TenagaMedis::all();
-        $arrDokter = [];
-		foreach ($data['getTenagaMedis'] as $key => $v) {
-			$getKdDokter = $v->kode_dokter;
-			array_push($arrDokter, $getKdDokter);
-		}
-        $data['dokter'] = DB::connection('dbwahidin')->table('tm_setupall')->whereNotIn('setupall_id', $arrDokter)
-            ->where('groups','Dokter')->where('nilaichar', '!=', '')->get();
-        # End Get Dokter
-        $content = view('admin.homecare.tenagamedis.form', $data)->render();
+        $content = view('admin.homecare.tenagamedis.modal', $data)->render();
 		return ['status' => 'success', 'content' => $content, 'data' => $data];
     }
 
     public function store(Request $request)
     {
-        $rules = array(
-            'kode_dokter' => 'required',
-            // 'telepon' => 'required',
-            'layanan_id' => 'required',
-        );
-        $messages = array(
-            'required'  => 'Kolom Harus Diisi',
-        );
-        $valid = Validator::make($request->all(), $rules,$messages);
-        if($valid->fails()) {
-            return ['status' => 'error', 'code' => 400, 'message' => $valid->messages()];
-        } else {
-            try {
-                if (empty($request->id)) {
-                    $data = new TenagaMedis;
-                } else {
-                    $data = TenagaMedis::where('id_tenaga_medis', $request->id)->first();
-                }
-                $data->kode_dokter = $request->kode_dokter;
-                // $data->telepon     = $request->telepon;
-                $data->layanan_id  = $request->layanan_id;
-                $data->status      = ($request->is_melayani == 'on') ? 'MELAYANI' : 'TIDAK MELAYANI';
-                $data->save();
-
-                if ($data) {
-                    $return = ['code' => 200, 'type' => 'succes', 'status' => 'success', 'message' => 'Data Berhasil Di simpan'];
-                } else {
-                    $return = ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Di simpan'];
-                }
-                return $return;
-            } catch (\Throwable $e) {
-                # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
-                $log = ['ERROR SIMPAN TENAGA MEDIS ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
-                Help::logging($log);
-    
-                return Help::resApi('Terjadi kesalahan sistem',500);
+        try {
+            if (empty($request->id)) {
+                $data = new TenagaMedisHomecare;
+                $data->status = false;
+            } else {
+                $data = TenagaMedisHomecare::where('id_tenaga_medis', $request->id)->first();
             }
+            $data->jenis_nakes  = $request->jenis_nakes;
+            $data->nakes_id     = $request->nama_nakes;
+            $data->layanan_id   = $request->layanan_id;
+            $data->save();
+
+            if ($data) {
+                return ['code' => 200, 'type' => 'succes', 'status' => 'success', 'message' => 'Data Berhasil Di simpan'];
+            }
+            return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Di simpan'];
+        } catch (\Throwable $e) {
+            $log = ['ERROR SIMPAN TENAGA MEDIS ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::logging($log);
+            return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
 
     public function delete(Request $request)
     {
         try {
-            $data = TenagaMedis::where('id_tenaga_medis', $request->id)->first();
+            $data = TenagaMedisHomecare::where('id_tenaga_medis', $request->id)->first();
             $data->delete();
     
             if ($data) {
-                $return = ['type' => 'success', 'status' => 'success', 'code' => '200'];
-            } else {
-                $return = ['type' => 'success', 'status' => 'success', 'code' => '201'];
-            }
-            return $return;
+                return ['type' => 'success', 'status' => 'success', 'code' => '200'];
+            } 
+            return ['type' => 'success', 'status' => 'success', 'code' => '201'];
         } catch (\Throwable $e) {
-            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
             $log = ['ERROR DELETE LAYANAN ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
-
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }

@@ -14,6 +14,14 @@
 		html.headercolor4 .topbar {
 			background: #8F49A9 !important;
 		}
+		.topbar-nav .metismenu a:hover, .topbar-nav .metismenu a:focus, .topbar-nav .metismenu a:active {
+			color: #ffffff;
+			text-decoration: none;
+			background: #8F49A9;
+		}
+		/* .active {
+			background: #8F49A9 !important;
+		} */
 		.nav-container {
 			background: #A484B0 !important;
 		}

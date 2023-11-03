@@ -9,10 +9,12 @@
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.8",
         "laravel/framework": "^8.75",
-        "laravel/sanctum": "^2.11",
+        "laravel/passport": "^10.4",
+        "laravel/sanctum": "^2.15",
         "laravel/tinker": "^2.5",
         "maatwebsite/excel": "*",
         "torann/geoip": "^3.0",
+        "xendit/xendit-php": "^3.4",
         "yajra/laravel-datatables-oracle": "^9.21"
     },
     "require-dev": {

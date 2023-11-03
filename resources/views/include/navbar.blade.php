@@ -354,14 +354,14 @@
 		<!-- main menu -->
 		<nav class="topbar-nav">
 			<ul class="metismenu" id="menu">
+				<li>
+					<a href="{{ Route('dashboard')}}">
+						<div class="parent-icon text-white"><i class='bx bx-home'></i>
+						</div>
+						<div class="menu-title">Dashboard</div>
+					</a>
+				</li>
 				@if(Auth::User()->level=='admin') <!-- Admin Aplikasi -->
-					<li>
-						<a href="{{ Route('dashboard')}}">
-							<div class="parent-icon text-white"><i class='bx bx-home'></i>
-							</div>
-							<div class="menu-title">Dashboard</div>
-						</a>
-					</li>
 					@include('include.navbar.homecare')
 					@include('include.navbar.telemedicine')
 					@include('include.navbar.mcu')
@@ -388,31 +388,10 @@
 						</a>
 					</li>
 				@elseif(Auth::User()->level=='adminmcu') <!-- Admin MCU -->
-					<li>
-						<a href="{{ Route('dashboardMcu')}}">
-							<div class="parent-icon text-white"><i class='bx bx-home'></i>
-							</div>
-							<div class="menu-title">Dashboard</div>
-						</a>
-					</li>
 					@include('include.navbar.mcu')
 				@elseif(Auth::User()->level=='adminhomecare') <!-- Admin Homecare -->
-					<li>
-						<a href="{{ Route('dashboardHomecare')}}">
-							<div class="parent-icon text-white"><i class='bx bx-home'></i>
-							</div>
-							<div class="menu-title">Dashboard</div>
-						</a>
-					</li>
 					@include('include.navbar.homecare')
-				@elseif(Auth::User()->level=='admintelemedis') <!-- Admin Telemedis -->	
-					<li>
-						<a href="{{ Route('dashboardTelemedicine')}}">
-							<div class="parent-icon text-white"><i class='bx bx-home'></i>
-							</div>
-							<div class="menu-title">Dashboard</div>
-						</a>
-					</li>
+				@elseif(Auth::User()->level=='admintelemedis') <!-- Admin Telemedis -->
 					@include('include.navbar.telemedicine')
 				@endif
 			</ul>
