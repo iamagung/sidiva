@@ -25,51 +25,42 @@ class PermintaanMcuController extends Controller
                 ->orderBy('created_at','ASC')->get();
 			return DataTables::of($data)
 				->addIndexColumn()
-				->addColumn('actions', function($row){
-					if ($row->status_pembayaran == 'sudah') {
-                        $txt = "
-                        <button class='btn btn-sm btn-primary' title='bayar' onclick='bayar(`$row->id_permintaan`)' disabled>Bayar</button>
-                        <button class='btn btn-sm btn-success' title='proses' onclick='proses(`$row->id_permintaan`)'>Proses</button>
+				->addColumn('opsi', function($row){
+                    if ($row->tanggal_kunjungan<date('Y-m-d')&&$row->status_pasien=='belum') {
+                        return "
+                        <button class='btn btn-sm btn-primary' title='terima' onclick='terima(`$row->id_permintaan_hc`)'>Terima</button>
+                        <button class='btn btn-sm btn-danger' title='tolak' onclick='tolak(`$row->id_permintaan_hc`)'>Tolak</button>
                         ";
-                    } else {
-                        $txt = "
-                        <button class='btn btn-sm btn-primary' title='bayar' onclick='bayar(`$row->id_permintaan`)'>Bayar</button>
-                        <button class='btn btn-sm btn-success' title='proses' onclick='proses(`$row->id_permintaan`)' disabled>Proses</button>
-                        ";
+                    } else if($row->tanggal_kunjungan==date('Y-m-d')){
+                        if ($row->status_pasien=='belum') {
+                            return "
+                            <button class='btn btn-sm btn-primary disabled' title='terima'>Terima</button>
+                            <button class='btn btn-sm btn-danger disabled' title='tolak'>Tolak</button>
+                            ";
+                        } else if($row->status_pembayaran=='paid') {
+                            if($row->status_pasien=='menunggu') {
+                                return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan_hc`)'>PILIH NAKES</button>";
+                            } else {
+                                return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button>";
+                            }
+                        }
                     }
+				})
+                ->addColumn('no_rm', function($row){
+					return $text = ($row->no_rm)?$row->no_rm:'-';
+				})
+                ->addColumn('layanan_mcu', function($row){
+                    $txt = !empty($row->listLayanan)?$row->listLayanan:'-';
 					return $txt;
 				})
-                ->addColumn('jenis_layanan', function($row){
-                    if (!empty($row->layanan_id)) {
-                        $layanan = LayananMcu::where('id_layanan', $row->layanan_id)->first()->jenis_layanan;
-                    } else {
-                        $layanan = '';
-                    }
-					return $layanan;
-				})
-                ->addColumn('nama_layanan', function($row){
-                    if (!empty($row->layanan_id)) {
-                        $layanan = LayananMcu::where('id_layanan', $row->layanan_id)->first()->nama_layanan;
-                    } else {
-                        $layanan = '';
-                    }
-					return $layanan;
-				})
-                ->addColumn('deskripsi', function($row){
-                    if (!empty($row->layanan_id)) {
-                        $layanan = LayananMcu::where('id_layanan', $row->layanan_id)->first()->deskripsi;
-                    } else {
-                        $layanan = '';
-                    }
-					return $layanan;
-				})
                 ->addColumn('pembayaran', function($row){
-                    if (!empty($row->status_pembayaran)) {
-                        $layanan = 'LUNAS';
+                    if ($row->status_pembayaran=='pending') {
+                        return 'BELUM BAYAR';
+                    } else if ($row->status_pembayaran=='paid') {
+                        return 'LUNAS';
                     } else {
-                        $layanan = 'BELUM BAYAR';
+                        return '-';
                     }
-					return $layanan;
 				})
 				->rawColumns(['actions'])
 				->toJson();

@@ -57,6 +57,17 @@
                             <input type="time" class="form-control" name="jadwal_dokter" id="jadwal_dokter" value="{{$jadwal_dokter}}" @if ($form_detail) disabled @endif>
                         </div>
                     </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label>Link Meet <span class="text-danger">*)</span></label>
+                        </div>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" name="link_vicon" id="link_vicon" value="{{ !empty($permintaan->video_conference) ? $permintaan->video_conference->link_vicon : ''}}" @if ($form_detail) disabled @endif>
+                        </div>
+                        <div class="col-md-4">
+                            <button id="generate_btn" class="btn btn-warning btn-sm" @if ($form_detail) disabled @endif>Buat Link Meet</button>
+                        </div>
+                    </div>
 				</form>
 			</div>
 			<div class="modal-footer float-end">
@@ -78,13 +89,13 @@
     $(".select2").select2({
         theme: 'bootstrap-5',
         dropdownParent: $('#formTenagaMedis')
-    }); 
+    });
     $('#modalFormTelemedicine').on('hidden.bs.modal', function() {
         $('.modal-dialog').html('');
     });
-    $('#btn-confirm').click(function (e) { 
+    $('#btn-confirm').click(function (e) {
         e.preventDefault();
-        
+
             var data = new FormData($('#formTenagaMedis')[0]);
             $.ajax({
                 url : "{{route('savePermintaanTelemedicine')}}",
@@ -117,5 +128,9 @@
                 Swal.fire("MAAF!", "Terjadi Kesalahan, Silahkan Ulangi Kembali !!", "warning");
                 $('#simpan').removeAttr('disabled');
             });
+    });
+    $('#generate_btn').click(function (e) {
+        e.preventDefault();
+        window.open('http://meet.google.com/new');
     });
 </script>

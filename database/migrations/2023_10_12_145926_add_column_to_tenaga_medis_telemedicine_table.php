@@ -14,7 +14,7 @@ class AddColumnToTenagaMedisTelemedicineTable extends Migration
     public function up()
     {
         Schema::table('tenaga_medis_telemedicine', function (Blueprint $table) {
-            $table->integer('tarif')->nullable();
+            $table->decimal('tarif', 12, 2)->nullable();
             $table->string('status', 50)->default('tidak melayani');
         });
     }

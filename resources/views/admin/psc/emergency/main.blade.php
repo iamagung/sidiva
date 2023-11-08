@@ -18,14 +18,14 @@
             <span style="font-weight: bold;">{{$title}}<span>
         </div>
         <div class="pe-3 col-md-1 justify-content-end">
-            <span style="color: #787878;">PSC<span>
+            <span style="color: #787878;">AMBULANCE<span>
         </div>
     </div>
 
     <!-- main content -->
     <div class="card main-layer">
         <div class="card-header">
-            <h5>Permintaan Ambulance</h5>
+            <h5>{{$title}}</h5>
         </div>
         <div class="card-body">
             <div class="row" style="margin-top: 2rem">

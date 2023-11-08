@@ -8,6 +8,7 @@ use App\Models\TmCustomer;
 use App\Models\ResepObat;
 use App\Models\RekapMedik;
 use App\Models\ResepObatDetail;
+use App\Models\VideoConference;
 use App\Models\DBSIRAMA\MsItem;
 use Illuminate\Http\Request;
 use App\Helpers\Helpers as Help;
@@ -43,7 +44,9 @@ class ApiPelayananDokterController extends Controller
             $permintaan = PermintaanTelemedicine::select('id_permintaan_telemedicine', 'permintaan_telemedicine.nama', 'permintaan_telemedicine.no_rm', 'tanggal_kunjungan', 'jadwal_dokter', 'status_pasien', 'keluhan')
                 ->where('permintaan_telemedicine.tenaga_medis_id', $request->tenaga_medis_id)
                 ->where('status_pasien', 'proses')
+                ->with('video_conference')
                 ->where('tanggal_kunjungan', '>=', $dateNow)
+                ->whereDoesntHave('rekap_medik')
                 ->orderBy('tanggal_kunjungan', 'asc')
                 ->get();
             if (count($permintaan)>0) {
@@ -91,9 +94,14 @@ class ApiPelayananDokterController extends Controller
         }
 
         try{
+            $sekarang = date('Y-m-d H:i:s');
             $permintaan = PermintaanTelemedicine::select('id_permintaan_telemedicine', 'permintaan_telemedicine.nama', 'permintaan_telemedicine.no_rm', 'tanggal_kunjungan', 'jadwal_dokter', 'status_pasien', 'jenis_kelamin', DB::raw('DATEDIFF(tanggal_kunjungan, tanggal_lahir) as umur'))
                 ->where('permintaan_telemedicine.tenaga_medis_id', $request->tenaga_medis_id)
-                ->where('status_pasien', 'selesai')
+                ->where('status_pasien', 'proses')
+                ->whereHas('video_conference', function($q) use($sekarang) {
+                    $q->where('waktu_selesai', '<', $sekarang);
+                })
+                ->whereHas('rekap_medik')
                 ->orderBy('tanggal_kunjungan', 'asc')
                 ->get();
             if (count($permintaan)>0) {
@@ -184,6 +192,9 @@ class ApiPelayananDokterController extends Controller
             'detail_obat.*.id_obat' => 'required',
             'detail_obat.*.qty' => 'required',
             'detail_obat.*.signa' => 'required',
+            'detail_obat.*.nama_obat' => 'required',
+            'detail_obat.*.kode_obat' => 'required',
+            'detail_obat.*.harga' => 'required',
             'anamnesis' => 'required',
             'pemeriksaan_fisik' => 'required',
             'assessment' => 'required',
@@ -194,6 +205,9 @@ class ApiPelayananDokterController extends Controller
             'detail_obat.*.id_obat.required' => 'Kolom Obat Harus Diisi',
             'detail_obat.*.qty.required' => 'Kolom Quantity Harus Diisi',
             'detail_obat.*.signa.required' => 'Kolom Signa Harus Diisi',
+            'detail_obat.*.nama_obat.required' => 'Kolom Nama Obat Harus Diisi',
+            'detail_obat.*.kode_obat.required' => 'Kolom Kode Obat Harus Diisi',
+            'detail_obat.*.harga.required' => 'Kolom Harga Harus Diisi',
             'anamnesis.required' => 'Anamnesis Wajib Di isi',
             'pemeriksaan_fisik.required' => 'Pemeriksaan Fisik Wajib Di isi',
             'assessment.required' => 'Assessment Wajib Di isi',
@@ -256,6 +270,13 @@ class ApiPelayananDokterController extends Controller
 
             }
 
+            $total = 0;
+            if(isset($request->detail_obat)) {
+                foreach ($request->detail_obat as $k => $v) {
+                    $total += (float)$v['harga'] * (integer)$v['qty'];
+                }
+            }
+
             # Cari jika permintaan telemedis nya sudah/belum diproses resep sebelumnya
             if(!$resep = ResepObat::where('permintaan_id', $request->id_permintaan_telemedicine)->first()) {
                 # Jika belum di proses, maka akan dibuat model resep baru
@@ -264,7 +285,21 @@ class ApiPelayananDokterController extends Controller
 
                 # Jika soap dan resep baru, maka digenerate nomor resep
                 $resep->no_resep = Help::generateNoResepTelemedicine();
+                $resep->status_pembayaran = 'belum';
             }
+
+            if($resep->status_pembayaran != 'belum'){
+                DB::rollback();
+                return [
+                    'metaData' => [
+                        "code" => 400,
+                        "message" => 'Gagal memperbarui resep, status pembayaran tidak valid'
+                    ],
+                    'response' => []
+                ];
+            }
+
+            $resep->total_bayar = $total;
             $resep->tgl_resep = date('Y-m-d H:i:s');
             $resep->berlaku_sampai = date('Y-m-d H:i:s', strtotime('+2 day'));
             $resep->jenis_layanan = 'telemedicine';
@@ -297,6 +332,9 @@ class ApiPelayananDokterController extends Controller
                     $detail_obat->id_obat = $v['id_obat'];
                     $detail_obat->qty = $v['qty'];
                     $detail_obat->signa = $v['signa'];
+                    $detail_obat->nama_obat = $v['nama_obat'];
+                    $detail_obat->kode_obat = $v['kode_obat'];
+                    $detail_obat->harga = $v['harga'];
                     $detail_obat->resep_obat_id = $resep->id_resep_obat;
                     $detail_obat->save();
                     if(!$detail_obat) {
@@ -311,6 +349,45 @@ class ApiPelayananDokterController extends Controller
                     }
                 }
             }
+
+            # Cek layanan vicon harus ada
+            if (!$vicon = VideoConference::where('permintaan_id', $request->id_permintaan_telemedicine)->where('jenis_layanan', 'telemedicine')->first()){
+                DB::rollback();
+                return [
+                    'metaData' => [
+                        "code" => 204,
+                        "message" => 'Layanan meeting tidak ditemukan'
+                    ],
+                    'response' => []
+                ];
+            }
+
+            if($vicon->waktu_mulai == "") {
+                DB::rollback();
+                return [
+                    'metaData' => [
+                        "code" => 400,
+                        "message" => 'Gagal menyimpan, Layanan meeting belum dilaksanakan'
+                    ],
+                    'response' => []
+                ];
+            }
+            # Akhiri layanan vicon jika belum diakhiri
+            $sekarang = date('Y-m-d H:i:s');
+            if(date('Y-m-d H:i:s', strtotime($vicon->waktu_selesai)) > $sekarang){
+                $vicon->waktu_selesai = $sekarang;
+                if(!$vicon->save()){
+                    DB::rollback();
+                    return [
+                        'metaData' => [
+                            "code" => 400,
+                            "message" => 'Gagal mengakhiri layanan meeting'
+                        ],
+                        'response' => []
+                    ];
+                }
+            }
+
             DB::commit();
             // DB::rollback();
             return [
@@ -325,6 +402,61 @@ class ApiPelayananDokterController extends Controller
             DB::rollback();
             # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
             $log = ['ERROR SAVE RESEP TELEMEDICINE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::logging($log);
+
+            return Help::resApi('Terjadi kesalahan sistem',500);
+        }
+    }
+
+    public function layaniTelemedicine(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'id_video_conference' => 'required'
+        ],[
+            'id_video_conference.required' => 'Id Video Conference Wajib Di isi'
+        ]);
+
+        if ($validate->fails()) {
+            return response()->json([
+                'metadata' => [
+                    'message' => $validate->errors()->all()[0],
+                    'code'    => 400,
+                ],
+                'response' => [],
+            ]);
+        }
+
+        try {
+            if(!$vicon = VideoConference::where('id_video_conference', $request->id_video_conference)->where('jenis_layanan', 'telemedicine')->with('permintaan_telemedicine')->first()){
+                return response()->json([
+                    'metadata' => [
+                        'message' => 'Tidak ditemukan link pelayanan',
+                        'code'    => 204,
+                    ],
+                    'response' => [],
+                ]);
+            }
+
+            $sekarang = date('Y-m-d H:i:s');
+            $jadwal_dokter = date('Y-m-d H:i:s', strtotime($vicon->permintaan_telemedicine->tanggal_kunjungan.$vicon->permintaan_telemedicine->jadwal_dokter));
+            if($jadwal_dokter>$sekarang){
+                return Help::resApi('Jam layanan belum di mulai', 400);
+            }
+            if($vicon->waktu_selesai != ""){
+                if($sekarang > date('Y-m-d H:i:s', strtotime($vicon->waktu_selesai))){
+                    return Help::resApi('Jam layanan sudah diakhiri', 400);
+                }
+            }
+            if($vicon->waktu_mulai == ""){
+                $vicon->waktu_mulai = date('Y-m-d H:i:s');
+                $vicon->waktu_selesai = date('Y-m-d 23:59');
+                if(!$vicon->save()){
+                    return Help::resApi('Gagal memulai layanan', 400);
+                }
+            }
+            return Help::resApi('Layanan dimulai', 200, $vicon->link_vicon);
+        } catch (\Throwable $e) {
+            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
+            $log = ['ERROR GET FORM RESEP OBAT TELEMEDICINE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
 
             return Help::resApi('Terjadi kesalahan sistem',500);

@@ -94,12 +94,12 @@ class Helpers{
 		return $nextKode = 'W'.date("ym").(string)($num+1);
 	}
 	# Generate no registrasi mcu
-	public static function generateNoRegMcu($request)
+	public static function generateNoRegMcu($tanggal)
 	{
 		$prefix = 'Reg-';
 		$length = strlen($prefix)+3;
 		$regist = DB::table('permintaan_mcu')->select('no_registrasi')
-				->where('tanggal_kunjungan',$request->tanggal_kunjungan)
+				->where('tanggal_kunjungan',$tanggal)
 				->whereRaw("LENGTH(no_registrasi)=$length")
 				->where('no_registrasi','like',"$prefix%")
 				->orderBy('no_registrasi','desc')->first();

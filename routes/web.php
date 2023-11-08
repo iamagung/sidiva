@@ -32,6 +32,7 @@ use App\Http\Controllers\Telemedicine\LayananTelemedicineController as LayananTe
 use App\Http\Controllers\Telemedicine\SyaratTelemedicineController as SyaratTelemedicine;
 use App\Http\Controllers\Telemedicine\PengaturanTelemedicineController as PengaturanTelemedicine;
 use App\Http\Controllers\Telemedicine\TenagaMedisController as TenagaMedisTelemedicine;
+use App\Http\Controllers\WebHook\XenditWebHookController as XenditWebHook;
 
 /*
 |--------------------------------------------------------------------------
@@ -141,7 +142,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::group(['prefix'=>'laporan-keuangan'],function(){
 			Route::get('/', [LapKeuangan::class, 'main'])->name('mainLaporanKeuangan');
 		});
-    }); 
+    });
     #Admin HOMECARE
     Route::group(['middleware' => ['cek_login:adminhomecare']], function () {
         Route::group(['prefix'=>'pendaftaran-homecare'],function(){
@@ -238,7 +239,7 @@ Route::group(['middleware' => ['auth']], function () {
                 Route::post('/tolak-permintaan-telemedicine', [PermintaanTelemedicine::class, 'tolak'])->name('tolakPermintaanTelemedicine');
                 Route::post('/terima-permintaan-telemedicine', [PermintaanTelemedicine::class, 'terima'])->name('terimaPermintaanTelemedicine');
             });
-        }); 
+        });
         # RIWAYAT Telemedicine
         Route::group(['prefix'=>'riwayat'],function(){
             Route::get('/', [RiwayatTelemedicine::class, 'main'])->name('mainRiwayatTelemedicine');
@@ -269,9 +270,14 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/', [PengaturanTelemedicine::class, 'form'])->name('formPengaturanTelemedicine');
             Route::get('/get', [PengaturanTelemedicine::class, 'get'])->name('getPengaturanTelemedicine');
             Route::post('/save', [PengaturanTelemedicine::class, 'store'])->name('savePengaturanTelemedicine');
-        });    
+        });
     });
 });
 Route::group(['prefix' => 'invoice'], function() {
     Route::get('/invoice_mcu/{id}', [PermintaanMcu::class, 'invoiceMcu'])->name('invoiceMcu');
 });
+# Start Xendit WebHook
+Route::group(['prefix' => 'xendit-webhook'], function() {
+    Route::post('invoice', [XenditWebHook::class, 'invoice']);
+});
+# End Xendit WebHook

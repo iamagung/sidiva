@@ -365,26 +365,35 @@
 					@include('include.navbar.homecare')
 					@include('include.navbar.telemedicine')
 					@include('include.navbar.mcu')
-					@include('include.navbar.psc')
+					<li>
+						<a href="{{ route('mainEmergencyPsc')}}">
+							<div class="parent-icon text-white">
+								<i class='bx bx-first-aid'></i></i>
+							</div>
+							<div class="menu-title">Emergency</div>
+						</a>
+					</li>
 					<li>
 						<a href="{{ Route('mainPengguna')}}">
 							<div class="parent-icon text-white"><i class='bx bxs-user'></i></i>
 							</div>
-							<div class="menu-title">Data Pengguna</div>
+							<div class="menu-title">Pengguna</div>
 						</a>
 					</li>
 					<li>
 						<a href="{{ Route('mainLaporanLayanan')}}">
-							<div class="parent-icon text-white"><i class='bx bxs-user'></i></i>
+							<div class="parent-icon text-white">
+								<i class='bx bxs-report'></i>
 							</div>
-							<div class="menu-title">Laporan Layanan</div>
+							<div class="menu-title">Lap Layanan</div>
 						</a>
 					</li>
 					<li>
 						<a href="{{ Route('mainLaporanKeuangan')}}">
-							<div class="parent-icon text-white"><i class='bx bxs-user'></i></i>
+							<div class="parent-icon text-white">
+								<i class='bx bxs-report'></i>
 							</div>
-							<div class="menu-title">Laporan Keuangan</div>
+							<div class="menu-title">Lap Keuangan</div>
 						</a>
 					</li>
 				@elseif(Auth::User()->level=='adminmcu') <!-- Admin MCU -->

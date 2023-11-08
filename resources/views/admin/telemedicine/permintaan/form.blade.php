@@ -21,6 +21,16 @@
                         @endif
                     </select>
                 </div>
+                </div><div class="row mb-3">
+                    <div class="col-md-10">
+                        <label>Link Meet *</label>
+                        <input type="text" name="link_meet" id="link_meet" value="{{ !empty($permintaan->link_meet) ? $permintaan->link_meet : ''}}">
+                    </div>
+                    <div class="col-md-2">
+                        <label>Generate</label>
+                        <button id="generate_btn">Buat Link Meet</button>
+                    </div>
+                </div>
             </div>
             <div class="card-footer">
                 <div class="row">
@@ -43,6 +53,11 @@
         $(".select2").select2({
             theme: 'bootstrap-5'
         });
+    });
+
+    $('#generate_btn').click(function (e) {
+        e.preventDefault();
+        window.open('http://meet.google.com/new');
     });
 
     $('#simpan').click(function (e) {

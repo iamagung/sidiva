@@ -13,11 +13,12 @@ class CreateRatingTelemedicineTable extends Migration
      */
     public function up()
     {
-        Schema::create('rating_telemedicine', function (Blueprint $table) {
-            $table->bigIncrements('id_rating_telemedicine');
-            $table->integer('permintaan_telemedicine_id');
+        Schema::create('rating', function (Blueprint $table) {
+            $table->bigIncrements('id_rating');
+            $table->integer('permintaan_id');
             $table->longText('comments')->nullable();
-            $table->integer('star_rating')->nullable();
+            $table->integer('star_rating');
+            $table->string('jenis_layanan', 25);
             $table->timestamps();
         });
     }

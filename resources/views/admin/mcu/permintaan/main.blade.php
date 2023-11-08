@@ -58,8 +58,7 @@
                                 <td>No. RM</td>
                                 <td>Nama Pemesan</td>
                                 <td>Jenis MCU</td>
-                                <td>Layanan MCU</td>
-                                <td>Jumlah Pasien</td>
+                                <td>Nama Layanan</td>
                                 <td>Pilihan Tanggal</td>
                                 <td>Pembayaran</td>
                                 <td>Status</td>
@@ -95,7 +94,7 @@
         if (month < 10) month = "0" + month;
         if (day < 10) day = "0" + day;
 
-        var today = year + "-" + month + "-" + day ;      
+        var today = year + "-" + month + "-" + day ;
         $("#tanggal").attr("value", today);
 
         loadTable(today);
@@ -106,7 +105,7 @@
         var table = $('#datatabel').DataTable({
             "dom": "<'row'<'col-sm-2'l><'col-sm-4 datesearchbox'><'col-sm-3 status'><'col-sm-3'f>>",
             scrollX: true,
-            searching: true, 
+            searching: true,
             paging: true,
             processing: true,
             serverSide: true,
@@ -128,13 +127,12 @@
             columns: [
                 { data: "DT_RowIndex", name: "DT_RowIndex"},
                 { data: "tanggal_order", name: "tanggal_order"},
+                { data: "no_rm", name: "no_rm"},
                 { data: "nama", name: "nama"},
-                { data: "jenis_layanan", name: "jenis_layanan"},
-                { data: "nama_layanan", name: "nama_layanan"},
-                { data: "jenis_pembayaran", name: "jenis_pembayaran"},
-                { data: "deskripsi", name: "deskripsi"},
+                { data: "jenis_mcu", name: "jenis_mcu"},
+                { data: "layanan_mcu", name: "layanan_mcu"},
                 { data: "tanggal_kunjungan", name: "tanggal_kunjungan"},
-                { data: "pembayaran", name: "pembayaran"},
+                { data: "payment", name: "payment"},
                 { data: "status_pasien", name: "status_pasien"},
                 { data: "actions", name: "actions", class: "text-center"},
             ],
@@ -144,7 +142,7 @@
     }
 
     function filterByDate() {
-        $("#tanggal").change(function (e) { 
+        $("#tanggal").change(function (e) {
             e.preventDefault();
             $('#datatabel').DataTable().destroy();
             loadTable( $("#tanggal").val() );
@@ -157,7 +155,7 @@
             if (data.status == 'success') {
                 $('.modal-dialog').html(data.content);
             } else {
-                Swal.fire('Maaf',data.message,"warning");    
+                Swal.fire('Maaf',data.message,"warning");
             }
         }).fail(function() {
             Swal.fire('Oops!!',"Terjadi kesalahan sistem!","error");

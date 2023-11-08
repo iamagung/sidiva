@@ -13,10 +13,10 @@ class AddPermintaanMcuTable extends Migration
      */
     public function up()
     {
-        // Schema::table('permintaan_mcu', function(Blueprint $table) {
-        //     $table->string('');
-        //     $table->string('maksimal_peserta')->nullable();
-        // });
+        Schema::table('permintaan_mcu', function(Blueprint $table) {
+            $table->string('jenis_mcu');
+            $table->string('tempat_lahir');
+        });
     }
 
     /**
@@ -26,6 +26,7 @@ class AddPermintaanMcuTable extends Migration
      */
     public function down()
     {
-        //
+        $table->dropColumn('jenis_mcu');
+        $table->dropColumn('tempat_lahir');
     }
 }

@@ -35,7 +35,7 @@ class CreatePermintaanTelemedicineTable extends Migration
             $table->integer('tenaga_medis_id');
             $table->integer('perawat_id');
             $table->string('jadwal_dokter',50);
-            $table->integer('biaya_layanan');
+            $table->decimal('biaya_layanan', 12, 2);
             $table->string('jenis_pembayaran')->comment('Tunai/Non Tunai')->nullable();
             $table->string('metode_pembayaran')->comment('Vendor payment yang digunakan')->nullable();
             $table->string('status_pembayaran')->comment('Belum/Lunas');

@@ -36,7 +36,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::group(array('prefix' => 'pendaftaran-mcu'), function(){
     Route::get('/get_layanan_mcu/{param}', [ApiPendaftaranMcu::class, 'getLayananMcu']);
     Route::get('/get_syarat_aturan', [ApiPendaftaranMcu::class, 'getSyaratAturan']);
-    Route::post('/detail_layanan_mcu/{id}', [ApiPendaftaranMcu::class, 'getDetailLayananMcu']);
+    Route::get('/detail_layanan_mcu/{id}', [ApiPendaftaranMcu::class, 'getDetailLayananMcu']);
     Route::post('/pesan_jadwal_mcu', [ApiPendaftaranMcu::class, 'pesanJadwalMcu']);
     Route::get('/list_pembayaran_mcu/{id}', [ApiPendaftaranMcu::class, 'getListPembayaranMcu']);
     // Route::get('/get_invoice_mcu/{id}', [ApiPendaftaranMcu::class, 'getInvoiceMcu']);
@@ -52,12 +52,13 @@ Route::group(array('prefix' => 'pendaftaran-mcu'), function(){
 Route::group(array('prefix' => 'pendaftaran-telemedicine'), function(){
     Route::post('/pesan_jadwal_telemedicine', [ApiPendaftaranTelemedicine::class, 'pesanJadwalTelemedicine']);
     Route::post('/get_list_telemedicine', [ApiPendaftaranTelemedicine::class, 'getListTelemedicine']);
+    Route::post('/get_list_pelayanan_telemedicine', [ApiPendaftaranTelemedicine::class, 'getListPelayananTelemedicine']);
     Route::post('/riwayat_permintaan_telemedicine', [ApiPendaftaranTelemedicine::class, 'riwayatPermintaanTelemedicine']);
     Route::get('/get_poli_telemedicine', [ApiPendaftaranTelemedicine::class, 'getPoli']);
     Route::post('/get_dokter_telemedicine', [ApiPendaftaranTelemedicine::class, 'getDokter']);
     Route::post('/get_jadwal_dokter_telemedicine', [ApiPendaftaranTelemedicine::class, 'getJadwalDokter']);
     Route::get('/get_permintaan_telemedicine', [ApiPendaftaranTelemedicine::class, 'getPermintaan']);
-    Route::get('/tes', [ApiPendaftaranTelemedicine::class, 'tes']);
+    Route::post('/invoice', [ApiPendaftaranTelemedicine::class, 'invoice']);
 });
 # End Telemedicine
 # Start Homecare
@@ -102,6 +103,7 @@ Route::group(array('prefix' => 'dokter-pelayanan'), function(){
     Route::post('/get_riwayat_telemedicine', [ApiPelayananDokter::class, 'getRiwayatTelemedicine']);
     Route::post('/form_resep_telemedicine', [ApiPelayananDokter::class, 'formResepTelemedicine']);
     Route::post('/save_resep_telemedicine', [ApiPelayananDokter::class, 'saveResepTelemedicine']);
+    Route::post('/layani_telemedicine', [ApiPelayananDokter::class, 'layaniTelemedicine']);
     Route::get('/cari_obat/{q}', [ApiPelayananDokter::class, 'cariObat']);
 });
 # End Dokter
@@ -111,5 +113,6 @@ Route::group(array('prefix' => 'perawat-pelayanan'), function(){
     Route::post('/get_riwayat_perawat', [ApiPelayananPerawat::class, 'getRiwayatPelayanan']);
     Route::post('/form_resep_telemedicine', [ApiPelayananPerawat::class, 'formResepTelemedicine']);
     Route::post('/save_resep_telemedicine', [ApiPelayananPerawat::class, 'saveResepTelemedicine']);
+    Route::post('/layani_telemedicine', [ApiPelayananPerawat::class, 'layaniTelemedicine']);
 });
 # End Perawat

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\PermintaanHC;
 use App\Models\PaketHC;
 use App\Models\LayananHC;
+use App\Models\LayananPermintaanHc;
 use App\Models\TenagaMedisHomecare;
 use App\Models\TenagaMedisPermintaanHomecare;
 use App\Helpers\Helpers as Help;
@@ -35,22 +36,46 @@ class PermintaanHCController extends Controller
                 ->where('tanggal_kunjungan', $request->tanggal)
                 ->orderBy('created_at','ASC')->get();
             }
+            foreach ($data as $k => $v) {
+                // return $v;
+                $layanan = LayananPermintaanHc::where('permintaan_id', $v->id_permintaan_hc)->get();
+                foreach ($layanan as $key => $val) {
+                    $namaLayanan = LayananHC::where('id_layanan_hc', $val->layanan_id)->first();
+                    if (!empty($namaLayanan)) {
+                        if(!isset($v->listLayanan)){
+                            $v->listLayanan = $namaLayanan->nama_layanan;
+                        }else{
+                            $v->listLayanan .= ", " . $namaLayanan->nama_layanan;
+                        }
+                    }
+                }
+            }
 			return DataTables::of($data)
 				->addIndexColumn()
 				->addColumn('opsi', function($row){
-					if ($row->status_pasien == 'belum') {
+                    if ($row->tanggal_kunjungan<date('Y-m-d')&&$row->status_pasien=='belum') {
                         return "
                         <button class='btn btn-sm btn-primary' title='terima' onclick='terima(`$row->id_permintaan_hc`)'>Terima</button>
                         <button class='btn btn-sm btn-danger' title='tolak' onclick='tolak(`$row->id_permintaan_hc`)'>Tolak</button>
                         ";
-                    } else if($row->status_pasien == 'menunggu') {
-                        return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan_hc`)'>PILIH NAKES</button>";
-                    } else {
-                        return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button>";
+                    } else if($row->tanggal_kunjungan==date('Y-m-d')){
+                        if ($row->status_pasien=='belum') {
+                            return "
+                            <button class='btn btn-sm btn-primary disabled' title='terima'>Terima</button>
+                            <button class='btn btn-sm btn-danger disabled' title='tolak'>Tolak</button>
+                            ";
+                        } else if($row->status_pembayaran=='paid') {
+                            if($row->status_pasien=='menunggu') {
+                                return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan_hc`)'>PILIH NAKES</button>";
+                            } else {
+                                return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button>";
+                            }
+                        }
                     }
 				})
                 ->addColumn('layanan', function($row){
-					return LayananHC::where('id_layanan_hc', $row->layanan_hc_id)->first()->nama_layanan;
+                    $txt = !empty($row->listLayanan)?$row->listLayanan:'-';
+					return $txt;
 				})
                 ->addColumn('lokasi', function($row){
                     $distance = $this->calculateDistance($row->latitude, $row->longitude);

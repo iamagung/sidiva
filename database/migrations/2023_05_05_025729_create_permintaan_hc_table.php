@@ -27,14 +27,14 @@ class CreatePermintaanHcTable extends Migration
             $table->date('tanggal_kunjungan');
             $table->date('tanggal_lahir')->nullable();
             $table->string('alamat')->nullable();
-            $table->string('alergi_pasien')->nullable();
+            $table->string('keterangan_lokasi')->nullable();
             $table->string('latitude');
             $table->string('longitude');
             $table->string('jenis_kelamin');
             $table->string('no_telepon');
             $table->string('jenis_pembayaran')->nullable();
             $table->integer('biaya_layanan')->nullable();
-            $table->integer('biaya_ke_lokasi')->nullable();
+            $table->decimal('biaya_ke_lokasi',12,2)->nullable();
             $table->string('status_pasien')->nullable()->comment('belum, menunggu, proses, ditolak, batal, selesai');
             $table->string('status_pembayaran')->nullable();
             $table->string('tenaga_medis_id')->nullable();

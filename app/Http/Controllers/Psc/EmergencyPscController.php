@@ -9,7 +9,7 @@ class EmergencyPscController extends Controller
 {
     function __construct()
 	{
-		$this->title = 'Permintaan Ambulance';
+		$this->title = 'Call Emergency';
 	}
 
     public function main() {

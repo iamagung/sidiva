@@ -16,7 +16,7 @@ class CreatePermintaanMcuTable extends Migration
         Schema::create('permintaan_mcu', function (Blueprint $table) {
             $table->bigIncrements('id_permintaan');
             $table->string('no_rm')->nullable();
-            $table->string('no_registrasi');
+            $table->string('no_registrasi')->nullable();
             $table->string('kode_booking');
             $table->string('no_antrian')->nullable();
             $table->string('nik');

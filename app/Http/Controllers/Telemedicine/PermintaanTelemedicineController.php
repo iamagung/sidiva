@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PermintaanTelemedicine;
 use App\Models\PaketTelemedicine;
+use App\Models\PaymentPermintaan;
 use App\Models\JadwalTenagaMedis;
 use App\Models\LayananTelemedicine;
 use App\Models\TenagaMedis;
+use App\Models\VideoConference;
 use App\Models\TenagaMedisTelemedicine;
 use App\Helpers\Helpers as Help;
 use DataTables, Validator, DB, Auth;
@@ -29,10 +31,10 @@ class PermintaanTelemedicineController extends Controller
                     ->with('tmPoli:KodePoli,NamaPoli')
                     ->with('nakes:id,name')
                     ->orderBy('permintaan_telemedicine.created_at','ASC');
-                $data->when($request->status=='all',fn($q) => 
+                $data->when($request->status=='all',fn($q) =>
                     $q->whereIn('status_pasien', ['belum','menunggu','proses','batal','tolak','selesai'])
                 );
-                $data->when($request->status!='all',fn($q) => 
+                $data->when($request->status!='all',fn($q) =>
                     $q->where('status_pasien', $request->status)
                 );
                 $data->get();
@@ -138,7 +140,7 @@ class PermintaanTelemedicineController extends Controller
 					return $txt;
 				})
                 ->addColumn('statusBayar', function($row){
-                    if ($row->status_pembayaran == 'lunas') {
+                    if ($row->status_pembayaran == 'paid') {
                         $txt = "
                         <span class='fw-bold text-center'>LUNAS</span>
                         ";
@@ -168,7 +170,9 @@ class PermintaanTelemedicineController extends Controller
         if($valid->fails()) {
             return ['status' => 'error', 'code' => 400, 'message' => $valid->messages()];
         } else {
-            $permintaan = PermintaanTelemedicine::where('id_permintaan_telemedicine', $request->id)->first();
+            $permintaan = PermintaanTelemedicine::where('id_permintaan_telemedicine', $request->id)
+                ->with('video_conference')
+                ->first();
 
             if($permintaan) {
                 $data['permintaan'] = $permintaan;
@@ -190,6 +194,7 @@ class PermintaanTelemedicineController extends Controller
             'perawat_id' => 'required',
             'tanggal_kunjungan' => 'required|date',
             'jadwal_dokter' => 'required|date_format:H:i',
+            'link_vicon' => 'required'
         );
         $messages = array(
             'perawat_id.required'  => 'Kolom Perawat Harus Diisi',
@@ -198,6 +203,7 @@ class PermintaanTelemedicineController extends Controller
             'tanggal_kunjungan.date' => 'Tanggal Kunjungan harus berformat yyyy-mm-dd',
             'jadwal_dokter.required' => 'Jadwal Dokter Wajib Di isi',
             'jadwal_dokter.date_format' => 'Jadwal Dokter harus berformat H:i, cth:(08:30)',
+            'link_vicon.required' => 'Link Meet Wajib Di isi',
         );
         $valid = Validator::make($request->all(), $rules,$messages);
         if($valid->fails()) {
@@ -208,9 +214,10 @@ class PermintaanTelemedicineController extends Controller
             }
 
             try {
+                DB::beginTransaction();
                 $data = PermintaanTelemedicine::where('id_permintaan_telemedicine', $request->id)->first();
                 if($data) {
-                    if($data->status_pembayaran == 'lunas') {
+                    if($data->status_pembayaran == 'paid') {
                         $data->perawat_id       = $request->perawat_id;
                         $data->status_pasien         = 'proses';
                         $data->jadwal_dokter    = $request->jadwal_dokter;
@@ -222,6 +229,14 @@ class PermintaanTelemedicineController extends Controller
                 }
 
                 if ($data) {
+                    if(!$vicon = VideoConference::where('permintaan_id', $request->id)->where('jenis_layanan', 'telemedicine')->first()){
+                        $vicon = new VideoConference;
+                        $vicon->jenis_layanan = 'telemedicine';
+                        $vicon->permintaan_id = $request->id;
+                        $vicon->is_expired = false;
+                    }
+                    $vicon->link_vicon = $request->link_vicon;
+                    $vicon->save();
                     if ($data->no_rm == null) {
                         $noRm = Help::generateRM();
                         # save to tabel permintaan hc
@@ -239,12 +254,15 @@ class PermintaanTelemedicineController extends Controller
                         ];
                         DB::connection('dbrsud')->table('tm_customer')->insert($dtCustomer);
                     }
+                    DB::commit();
                     $return = ['code' => 200, 'type' => 'succes', 'status' => 'success', 'message' => 'Data Berhasil Di simpan'];
                 } else {
+                    DB::rollback();
                     $return = ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Di simpan'];
                 }
                 return $return;
             } catch (\Throwable $e) {
+                DB::rollback();
                 # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
                 $log = ['ERROR SIMPAN TENAGA MEDIS ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
                 Help::logging($log);
@@ -299,7 +317,8 @@ class PermintaanTelemedicineController extends Controller
         return $return;
     }
 
-    function terima(Request $request) {
+    public function terima(Request $request)
+    {
         $rules = array(
             'id' => 'required',
         );
@@ -311,21 +330,41 @@ class PermintaanTelemedicineController extends Controller
             return ['status' => 'error', 'code' => 400, 'message' => $valid->messages()];
         } else {
             try {
+                DB::beginTransaction();
                 $data = PermintaanTelemedicine::where('id_permintaan_telemedicine', $request->id)->first();
                 if($data){
                     if($data->status_pembayaran != 'belum') {
+                        DB::rollback();
                         return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Status pembayaran tidak sesuai'];
                     }
                     if($data->status_pasien != 'belum') {
+                        DB::rollback();
                         return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Status pasien tidak dalam permintaan'];
                     }
+                    if ($payment = PaymentPermintaan::where('permintaan_id', $request->id)->where('jenis_layanan', 'telemedicine')->first()) {
+                        DB::rollback();
+                        return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Permintaan sudah melalui pembayaran'];
+                    }
+                    if (!($data->biaya_layanan != null && $data->biaya_layanan != 0)) {
+                        DB::rollback();
+                        return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Biaya Dokter Tidak Valid'];
+                    }
+                    $payment = new PaymentPermintaan;
+                    $payment->permintaan_id = $request->id;
+                    $payment->nominal = $data->biaya_layanan;
+                    $payment->jenis_layanan = 'telemedicine';
+                    $payment->tgl_expired = date('Y-m-d H:i:s', strtotime('+1 hour'));
+                    $payment->status = 'UNCONFIRMED';
+                    $payment->save();
                     $data->status_pasien = 'menunggu';
                     $data->save();
-    
+
                     if ($data) {
+                        DB::commit();
                         $return = ['code' => 200, 'type' => 'succes', 'status' => 'success', 'message' => 'Data Berhasil Di simpan'];
                     }
                 } else {
+                    DB::rollback();
                     $return = ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Di simpan'];
                 }
                 return $return;

@@ -10,6 +10,7 @@ use App\Models\SyaratMcu;
 use App\Models\TransaksiMCU;
 use App\Models\PermintaanMcu;
 use App\Models\PengaturanMcu;
+use App\Models\LayananPermintaanMcu;
 use App\Helpers\Helpers as Help;
 use DataTables, Validator, DB, Auth;
 
@@ -19,8 +20,7 @@ class ApiPendaftaranMcuController extends Controller
         date_default_timezone_set('Asia/Jakarta');
     }
 
-    public function getLayananMcu($param)
-    {
+    public function getLayananMcu($param) {
         $data = LayananMcu::where('kategori_layanan', strtoupper($param))->get();
         if (count($data) > 0) {
             return Help::custom_response(200, "success", "Berhasil", $data);
@@ -28,244 +28,180 @@ class ApiPendaftaranMcuController extends Controller
         return Help::custom_response(404, "error", "Data not found.", null);
     }
 
-    public function getDetailLayananMcu($id)
-    {
+    public function getDetailLayananMcu($id) {
         $data = LayananMcu::where('id_layanan', $id)->first();
-        if (!empty($data)) {
-            $respon = [
-                'metaData' => [
-                    "code" => 200,
-                    "message" => 'Berhasil'
-                ],
-                'response' => $data
-            ];
-        } else {
-            $respon = [
-                'metaData' => [
-                    "code" => 201,
-                    "message" => 'Data Tidak Ditemukan.'
-                ],
-                'response' => []
-            ];
+        if ($data) {
+            return Help::custom_response(200, "success", 'Success', $data);
         }
-        return response()->json($respon);
+        return Help::custom_response(204, "error", 'Not found', null);
     }
 
-    public function getSyaratAturan(Request $request)
-    {
+    public function getSyaratAturan(Request $request) {
         $data = SyaratMcu::where('id_syarat_mcu', 1)->first();
-        if (!empty($data)) {
-            $respon = [
-                'metaData' => [
-                    "code" => 200,
-                    "message" => 'Berhasil'
-                ],
-                'response' => $data
-            ];
-        } else {
-            $respon = [
-                'metaData' => [
-                    "code" => 500,
-                    "message" => 'Data Tidak Ditemukan'
-                ],
-                'response' => []
-            ];
+        if ($data) {
+            return Help::custom_response(200, "success", 'Success', $data);
         }
-
-        return response()->json($respon);
+        return Help::custom_response(204, "error", 'Not found', null);
     }
 
-    public function pesanJadwalMcu(Request $request)
-    {
-        if ($request->no_rm == "") {
-            $validate = Validator::make($request->all(),[
-                'nik' => 'required',
-                'nama' => 'required',
-                'tanggal_lahir' => 'required',
-                'alamat' => 'required',
-                'jenis_pembayaran' => 'required',
-                'layanan_id' => 'required',
-                'tanggal_kunjungan' => 'required',
-                'jenis_kelamin' => 'required',
-                'no_telepon' => 'required'
-            ],[
-                'nik.required' => 'Nik Wajib Di isi',
-                'nama.required' => 'Nama Wajib Di isi',
-                'tanggal_lahir.required' => 'Tanggal Lahir Wajib Di isi',
-                'alamat.required' => 'Alamat Wajib Di isi',
-                'jenis_pembayaran.required' => 'Jenis Pembayaran  Wajib Di isi',
-                'layanan_id.required' => 'Jenis Layanan  Wajib Di isi',
-                'tanggal_kunjungan.required' => 'Tanggal Kunjungan Wajib Di isi',
-                'jenis_kelamin.required' => 'Jenis Kelamin Wajib Di isi',
-                'no_telepon.required' => 'No. telepon Wajib Di isi'
-            ]);
-        }else{
-            $validate = Validator::make($request->all(),[
-                'jenis_pembayaran' => 'required',
-                'layanan_id' => 'required',
-                'tanggal_kunjungan' => 'required'
-            ],[
-                'jenis_pembayaran.required' => 'Jenis Pembayaran Wajib Di isi',
-                'layanan_id.required' => 'Jenis Layanan  Wajib Di isi',
-                'tanggal_kunjungan.required' => 'Tanggal Kunjungan Wajib Di isi',
-            ]);
-        }
+    public function pesanJadwalMcu(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'detail_pasien.*.nik' => 'required',
+            'detail_pasien.*.nama' => 'required',
+            'detail_pasien.*.tempat_lahir' => 'required',
+            'detail_pasien.*.tanggal_lahir' => 'required',
+            'detail_pasien.*.jenis_kelamin' => 'required',
+            'detail_pasien.*.alamat' => 'required',
+            'detail_pasien.*.telepon' => 'required',
+            'detail_layanan.*.layanan_id' => 'required',
+            'detail_pasien.*.tanggal_kunjungan' => 'required',
+            'detail_pasien.*.waktu_layanan' => 'required'
+        ],[
+            'detail_pasien.*.nik.required' => 'NIK Wajib Diisi',
+            'detail_pasien.*.nama.required' => 'Nama Lengkap Wajib Di isi',
+            'detail_pasien.*.tempat_lahir.required' => 'Tempat Lahir Wajib Di isi',
+            'detail_pasien.*.tanggal_lahir.required' => 'Tanggal Lahir Wajib Di isi',
+            'detail_pasien.*.jenis_kelamin.required' => 'Jenis Kelamin Wajib Di isi',
+            'detail_pasien.*.alamat.required' => 'Alamat Wajib Di isi',
+            'detail_pasien.*.telepon.required' => 'Telepon Wajib Di isi',
+            'detail_layanan.*.layanan_id.required' => 'Jenis Layanan Wajib Di isi',
+            'detail_pasien.*.tanggal_kunjungan.required' => 'Tanggal Kunjungan Wajib Diisi',
+            'detail_pasien.*.waktu_layanan.required' => 'Waktu Layanan Wajib Diisi'
+        ]);
+        // return $request;
         if (!$validate->fails()) {
-            $tanggal = strtotime($request->tanggal_kunjungan);
-            $request->tanggal_kunjungan = date('Y-m-d', $tanggal);
-            $check_nik = $this->checkByNik($request->nik, $request->tanggal_kunjungan);
-            if ($check_nik > 0) {
-                return response()->json([
-                    'metadata' => [
-                        'message' => 'Nik telah digunakan untuk mendaftar pada tanggal '.$this->tgl_indo($request->tanggal_kunjungan),
-                        'code'    => 201,
-                    ],
-                    'response' => [],
-                ]);
-            }
-			$timeCur = date('H:i');
-			$dateCur = date('Y-m-d');
-			$dayName = date('D',strtotime($request->tanggal_kunjungan));
-            $pengaturan = PengaturanMcu::where('id_pengaturan_mcu', 1)->first();
-            if ($dayName == 'Mon') { # Senin
-                if ($pengaturan->seninBuka == '' || $pengaturan->seninTutup == '') { # If Tidak ada jadwal
-                    return Help::resApi('Tidak ada jadwal hari ini.',201);
-                } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->seninBuka) {
-                        return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->seninBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->seninTutup) {
-                        return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->seninTutup,201);
-                    }
-                }
-            }
-            if ($dayName == 'Tue') { # Selasa
-                if ($pengaturan->selasaBuka == '' || $pengaturan->selasaTutup == '') { # If Tidak ada jadwal
-                    return Help::resApi('Tidak ada jadwal hari ini.',201);
-                } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->selasaBuka) {
-                        return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->selasaBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->selasaTutup) {
-                        return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->selasaTutup,201);
-                    }
-                }
-            }
-            if ($dayName == 'Wed') { # Rabu
-                if ($pengaturan->rabuBuka == '' || $pengaturan->rabuTutup == '') { # If Tidak ada jadwal
-                    return Help::resApi('Tidak ada jadwal hari ini.',201);
-                } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->rabuBuka) {
-                        return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->rabuBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->rabuTutup) {
-                        return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->rabuTutup,201);
-                    }
-                }
-            }
-            if ($dayName == 'Thu') { # Kamis
-                if ($pengaturan->kamisBuka == '' || $pengaturan->kamisTutup == '') { # If Tidak ada jadwal
-                    return Help::resApi('Tidak ada jadwal hari ini.',201);
-                } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->kamisBuka) {
-                        return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->kamisBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->kamisTutup) {
-                        return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->kamisTutup,201);
-                    }
-                }
-            }
-            // if ($dayName == 'Fri') { # Jum'at
-            //     if ($pengaturan->jumatBuka == '' || $pengaturan->jumatTutup == '') { # If Tidak ada jadwal
-            //         return Help::resApi('Tidak ada jadwal hari ini.',201);
-            //     } else {
-            //         if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->jumatBuka) {
-            //             return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->jumatBuka,201);
-            //         } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->jumatTutup) {
-            //             return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->jumatTutup,201);
-            //         }
-            //     }
-            // }
-            if ($dayName == 'Sat') { # Sabtu
-                if ($pengaturan->sabtuBuka == '' || $pengaturan->sabtuTutup == '') { # If Tidak ada jadwal
-                    return Help::resApi('Tidak ada jadwal hari ini.',201);
-                } else {
-                    if ($request->tanggal_kunjungan==$dateCur && $timeCur<$pengaturan->sabtuBuka) {
-                        return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->sabtuBuka,201);
-                    } else if($request->tanggal_kunjungan==$dateCur && $timeCur>$pengaturan->sabtuTutup) {
-                        return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->sabtuTutup,201);
-                    }
-                }
-            }
-			if($dayName == 'Sun'){ # If tanggal periksa adalah hari minggu
-				return Help::resApi('Tidak bisa mengambil antrian pada hari minggu.',201);
-			}
-            if($request->tanggal_kunjungan<$dateCur){ # If tanggal periksa kemarin{back date}
-                return Help::resApi('Tanggal sudah terlewat.',201);
-            }
-            $pasien = TmCustomer::where('NoKtp','=',$request->nik)->first();
-            if (empty($pasien)) {
-                $pasien = TmCustomer::where('KodeCust','=',$request->no_rm)->first();
-            }
-            if (strlen($request->nik)!=16) {
-                return Help::resApi('NIK tidak sesuai standar 16 digit.',201);
-            }
-            if($request->jenis_pembayaran == 'BPJS') {
-                if (strlen($request->no_bpjs)!=13) {
-                    return Help::resApi('Nomor BPJS tidak sesuai standar 13 digit.',201);
-                }
-            }
+            DB::beginTransaction();
             try {
-                $noreg = Help::generateNoRegMcu($request);
-                $strRandom = Help::randomString(7);
-                $data = new PermintaanMcu;
-                $data->no_rm                = !empty($pasien) ? $request->no_rm : null;
-                $data->no_registrasi        = $noreg;
-                $data->kode_booking         = $strRandom;
-                $data->nik                  = !empty($pasien) ? $pasien->NoKtp : $request->nik;
-                $data->nama                 = !empty($pasien) ? $pasien->NamaCust : strtoupper($request->nama);
-                $data->alamat               = !empty($pasien) ? $pasien->Alamat : $request->alamat;
-                // $data->layanan_id           = $request->layanan_id;
-                $data->layanan_id           = implode($request->layanan_id,',');
-                $data->tanggal_order        = date('Y-m-d');
-                $data->tanggal_kunjungan    = $request->tanggal_kunjungan;
-                $data->jenis_pembayaran     = $request->jenis_pembayaran;
-                $data->no_bpjs              = !empty($request->no_bpjs) ? $request->no_bpjs : null;
-                $data->no_rujukan           = !empty($request->no_rujukan) ? $request->no_rujukan : null;
-                $data->tanggal_lahir        = !empty($pasien) ? $pasien->TglLahir : $request->tanggal_lahir;
-                $data->jenis_kelamin        = !empty($pasien) ? $pasien->JenisKel : $request->jenis_kelamin;
-                $data->telepon              = !empty($pasien) ? $pasien->Telp : $request->no_telepon;
-                $data->status_pasien        = 'belum';
-                $data->save();
-
-                if ($data) {
-                    return response()->json([
-                        'metadata' => [
-                            'message' => 'Success',
-                            'code'    => 200,
-                        ],
-                        'response' => Help::callbackRegistMcu($data),
+                $arrPermintaan = array();
+                $arrLayananPermintaan = array();
+                foreach ($request->detail_pasien as $key => $val) {
+                    $tanggal = date('Y-m-d');
+                    $tanggalKunjungan = date('Y-m-d', strtotime($val['tanggal_kunjungan']));
+                    $timeCur = date('H:i');
+                    $dayName = date('D', strtotime($tanggalKunjungan));
+                    if($tanggalKunjungan<$tanggal){# Jika tanggal periksa kemarin{back date}
+                        return Help::resApi('Tanggal sudah terlewat.',400);
+                    }
+                    # Menghitung selisih hari antara tanggal order dan tanggal pendaftaran
+                    $selisih_hari = strtotime($tanggal) - strtotime($tanggalKunjungan);
+                    $selisih_hari = $selisih_hari / (60 * 60 * 24); # Menghitung selisih hari
+                    if ($selisih_hari > -1 || $selisih_hari < -3) { #Pengecekan pendaftaran hanya bisa (H-3) - (H-1)
+                        return Help::resApi('Pendaftaran bisa dilakukan H-3 sampai H-1',400);
+                    }
+                    if ($check_nik = $this->checkByNik($val['nik'], $tanggalKunjungan) > 0) {# pengecekan agar tidak dobel
+                        return Help::custom_response(500, "error", 'Nik telah digunakan untuk mendaftar pada tanggal '.Help::dateIndo($tanggalKunjungan), null);
+                    }
+                    $pengaturan = PengaturanMcu::where('id_pengaturan_mcu', 1)->first();
+                    if ($dayName == 'Mon') { # Senin
+                        if ($pengaturan->seninBuka == '' || $pengaturan->seninTutup == '') { # If Tidak ada jadwal
+                            return Help::resApi('Tidak ada jadwal hari ini.',400);
+                        } else {
+                            if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->seninBuka) {
+                                return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->seninBuka,400);
+                            } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->seninTutup) {
+                                return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->seninTutup,400);
+                            }
+                        }
+                    }
+                    if ($dayName == 'Tue') { # Selasa
+                        if ($pengaturan->selasaBuka == '' || $pengaturan->selasaTutup == '') { # If Tidak ada jadwal
+                            return Help::resApi('Tidak ada jadwal hari ini.',400);
+                        } else {
+                            if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->selasaBuka) {
+                                return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->selasaBuka,400);
+                            } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->selasaTutup) {
+                                return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->selasaTutup,400);
+                            }
+                        }
+                    }
+                    if ($dayName == 'Wed') { # Rabu
+                        if ($pengaturan->rabuBuka == '' || $pengaturan->rabuTutup == '') { # If Tidak ada jadwal
+                            return Help::resApi('Tidak ada jadwal hari ini.',400);
+                        } else {
+                            if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->rabuBuka) {
+                                return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->rabuBuka,400);
+                            } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->rabuTutup) {
+                                return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->rabuTutup,400);
+                            }
+                        }
+                    }
+                    if ($dayName == 'Thu') { # Kamis
+                        if ($pengaturan->kamisBuka == '' || $pengaturan->kamisTutup == '') { # If Tidak ada jadwal
+                            return Help::resApi('Tidak ada jadwal hari ini.',400);
+                        } else {
+                            if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->kamisBuka) {
+                                return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->kamisBuka,400);
+                            } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->kamisTutup) {
+                                return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->kamisTutup,400);
+                            }
+                        }
+                    }
+                    if ($dayName == 'Fri') { # Jumat
+                        if ($pengaturan->jumatBuka == '' || $pengaturan->jumatTutup == '') { # If Tidak ada jadwal
+                            return Help::resApi('Tidak ada jadwal hari ini.',400);
+                        } else {
+                            if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->jumatBuka) {
+                                return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->jumatBuka,400);
+                            } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->jumatTutup) {
+                                return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->jumatTutup,400);
+                            }
+                        }
+                    }
+                    if ($dayName == 'Sat') { # Sabtu
+                        if ($pengaturan->sabtuBuka == '' || $pengaturan->sabtuTutup == '') { # If Tidak ada jadwal
+                            return Help::resApi('Tidak ada jadwal hari ini.',400);
+                        } else {
+                            if ($tanggalKunjungan==$tanggal && $timeCur<$pengaturan->sabtuBuka) {
+                                return Help::resApi('Pendaftaran bisa dilakukan mulai jam '.$pengaturan->sabtuBuka,400);
+                            } else if($tanggalKunjungan==$tanggal && $timeCur>$pengaturan->sabtuTutup) {
+                                return Help::resApi('Pendaftaran sudah ditutup pada jam '.$pengaturan->sabtuTutup,400);
+                            }
+                        }
+                    }
+                    if($dayName == 'Sun'){ # If tanggal periksa adalah hari minggu
+                        return Help::resApi('Tidak bisa mengambil antrian pada hari minggu.',400);
+                    }
+                    if (strlen($val['nik'])!=16) {
+                        return Help::resApi('NIK tidak sesuai standar 16 digit.',400);
+                    }
+                    # insert to permintaan mcu
+                    $newPermintaan = PermintaanMCU::create([
+                        'nik'  => $val['nik'],
+                        'nama'  => $val['nama'],
+                        'alamat'  => $val['alamat'],
+                        'tempat_lahir'  => $val['tempat_lahir'],
+                        'tanggal_lahir'  => $val['tanggal_lahir'],
+                        'tanggal_order'  => date('Y-m-d'),
+                        'tanggal_kunjungan'  => $val['tanggal_kunjungan'],
+                        'jenis_kelamin'  => $val['jenis_kelamin'],
+                        'telepon'  => $val['telepon'],
+                        'status_pembayaran'  => "pending",
+                        'status_pasien'  => "belum",
+                        'jenis_mcu'  => $request->jenis_mcu
                     ]);
-                }else{
-                    return response()->json([
-                        'metadata' => [
-                            'message' => 'Error',
-                            'code'    => 201,
-                        ],
-                        'response' => [],
-                    ]);
+                    if(!$newPermintaan->save()) { #jika gagal simpan permintaan
+                        DB::rollback();
+                        return Help::resApi('gagal simpan permintaan', 400);
+                    }
+                    foreach ($request->detail_layanan as $key => $v) {
+                        $layanan = new LayananPermintaanMcu;
+                        $layanan->layanan_id = $v['layanan_id'];
+                        $layanan->permintaan_id = $newPermintaan->id_permintaan;
+                        if(!$layanan->save()){ #jika gagal simpan pelayanan
+                            DB::rollback();
+                            return Help::resApi('gagal simpan layanan', 400);        
+                        }
+                    }
                 }
+                DB::commit();
+                return Help::custom_response(200, "success", 'Success', null);
             } catch (\Throwable $e) {
-                # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
                 $log = ['ERROR PENDAFTARAN MCU ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
                 Help::logging($log);
-
                 return Help::resApi('Terjadi kesalahan sistem',500);
             }
         }else{
-            return response()->json([
-                'metadata' => [
-                    'message' => $validate->errors()->all()[0],
-                    'code'    => 500,
-                ],
-                'response' => [],
-            ]);
+            return Help::custom_response(400, "error", $validate->errors()->all()[0], null);
         }
     }
 

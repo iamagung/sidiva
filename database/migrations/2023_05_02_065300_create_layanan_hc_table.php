@@ -15,7 +15,11 @@ class CreateLayananHcTable extends Migration
     {
         Schema::create('layanan_hc', function (Blueprint $table) {
             $table->bigIncrements('id_layanan_hc');
+            $table->string('jenis_layanan');
             $table->string('nama_layanan');
+            $table->decimal('harga',12,2);
+            $table->string('jumlah_hari');
+            $table->text('deskripsi');
             $table->timestamps();
         });
     }

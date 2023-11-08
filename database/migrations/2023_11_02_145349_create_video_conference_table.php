@@ -19,7 +19,7 @@ class CreateVideoConferenceTable extends Migration
             $table->string('jenis_layanan', 25);
             $table->string('link_vicon', 255);
             $table->boolean('is_expired')->default(false);
-            $table->dateTime('tgl_expired');
+            $table->dateTime('tgl_expired')->nullable();
             $table->dateTime('waktu_mulai')->nullable();
             $table->dateTime('waktu_selesai')->nullable();
             $table->timestamps();

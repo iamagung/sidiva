@@ -6,13 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\PermintaanTelemedicine;
 use App\Models\PengaturanTelemedicine;
 use App\Models\TenagaMedisTelemedicine;
+use App\Models\PaymentPermintaan;
+use App\Models\Rating;
 use App\Models\JadwalTenagaMedis;
 use App\Models\TmCustomer;
 use App\Models\DBRSUD\TmPoli;
 use Illuminate\Http\Request;
 use App\Helpers\Helpers as Help;
 use App\Helpers\XenditHelpers;
-use Validator, DB;
+use Validator, DB, DateTime;
 
 class ApiPendaftaranTelemedicineController extends Controller
 {
@@ -233,6 +235,7 @@ class ApiPendaftaranTelemedicineController extends Controller
             'id_user.required' => 'ID User Wajib Di isi'
         ]);
         if (!$validate->fails()) {
+            $sekarang = date('Y-m-d');
             try{
                 $permintaan = PermintaanTelemedicine::select('id_permintaan_telemedicine', 'tanggal_order as tanggal_transaksi', 'tenaga_medis_id', 'poli_id', 'tanggal_kunjungan', 'jadwal_dokter', 'status_pasien', 'biaya_layanan as total_biaya')
                     // ->has('tmPoli')
@@ -244,6 +247,9 @@ class ApiPendaftaranTelemedicineController extends Controller
                     ->whereHas('user_android',function ($q) use($request) {
                         $q->where('user_id', '=', $request->id_user);
                     })
+                    ->with('payment_permintaan')
+                    ->whereIn('status_pasien', ['menunggu', 'belum'])
+                    ->where('tanggal_kunjungan', '>', $sekarang)
                     ->get();
                 // $permintaan = PermintaanTelemedicine::select('id_permintaan_telemedicine', 'tanggal_order as tanggal_transaksi', 'tm_poli.NamaPoli as nama_poli', 'nakes_user.name as nama_nakes', 'tanggal_kunjungan', 'jadwal_dokter', 'status_pasien', 'biaya_layanan as total_biaya')
                 //     // ->join(DB::connection('dbrsud')->raw('dbsimars_baru.tm_poli as tm_poli'),'permintaan_telemedicine.poli_id','=','tm_poli.KodePoli')
@@ -285,6 +291,64 @@ class ApiPendaftaranTelemedicineController extends Controller
                 ],
                 'response' => [],
             ]);
+        }
+    }
+
+    public function getListPelayananTelemedicine(Request $request)
+    {
+        $validate = Validator::make($request->all(),[
+            'id_user' => 'required'
+        ],[
+            'id_user.required' => 'ID User Wajib Di isi'
+        ]);
+        if ($validate->fails()) {
+            return response()->json([
+                'metadata' => [
+                    'message' => $validate->errors()->all()[0],
+                    'code'    => 400,
+                ],
+                'response' => [],
+            ]);
+        }
+        try{
+            $permintaan = PermintaanTelemedicine::select('id_permintaan_telemedicine', 'tanggal_order as tanggal_transaksi', 'poli_id', 'tenaga_medis_id', 'tanggal_kunjungan', 'jadwal_dokter', 'status_pasien')
+                ->with('tmPoli:KodePoli,NamaPoli as nama_poli')
+                ->has('dokter')
+                ->with('dokter', function($q) {
+                    $q->select('nakes_id')->has('user_ranap')->with('user_ranap:id,name as nama_dokter');
+                })
+                ->whereHas('user_android',function ($q) use($request) {
+                    $q->where('user_id', '=', $request->id_user);
+                })
+                ->whereHas('video_conference')
+                ->with('video_conference:permintaan_id,link_vicon')
+                ->where('status_pasien', 'proses')
+                ->orderBy('id_permintaan_telemedicine', 'DESC')
+                ->get();
+            if (count($permintaan) > 0) {
+                return [
+                    'metaData' => [
+                        "code" => 200,
+                        "message" => 'Berhasil'
+                    ],
+                    'response' => $permintaan
+                ];
+            } else {
+                return [
+                    'metaData' => [
+                        "code" => 204,
+                        "message" => 'Tidak ada daftar pelayanan aktif.'
+                    ],
+                    'response' => []
+                ];
+            }
+
+        } catch (\Throwable $e) {
+            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
+            $log = ['ERROR GET LIST PELAYANAN TELEMEDICINE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::logging($log);
+
+            return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
 
@@ -491,10 +555,221 @@ class ApiPendaftaranTelemedicineController extends Controller
         }
     }
 
-    public function tes() {
-        XenditHelpers::buatCharge();
-        // return XenditHelpers::setKey();
+    public function invoice(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'id_permintaan_telemedicine' => 'required'
+        ],[
+            'id_permintaan_telemedicine.required' => 'ID Permintaan Telemedicine Wajib Di isi'
+        ]);
+        if ($validate->fails()) {
+            return response()->json([
+                'metadata' => [
+                    'message' => $validate->errors()->all()[0],
+                    'code'    => 400,
+                ],
+                'response' => [],
+            ]);
+        }
 
+        try{
+
+            # Cari data permintaan berdasarkan id_permintaan_telemedicine
+            if(!$permintaan = PermintaanTelemedicine::where('id_permintaan_telemedicine', $request->id_permintaan_telemedicine)->first()) {
+                return [
+                    'metaData' => [
+                        "code" => 204,
+                        "message" => 'Permintaan Telemedicine Tidak Ditemukan'
+                    ],
+                    'response' => []
+                ];
+            }
+
+            # Cari data payment berdasarkan permintaan_id dan jenis layanan telemedicine
+            if (!$payment = PaymentPermintaan::where('permintaan_id', $request->id_permintaan_telemedicine)->where('jenis_layanan', 'telemedicine')->first()) {
+                return [
+                    'metaData' => [
+                        "code" => 204,
+                        "message" => 'Permintaan Belum Disetujui Petugas'
+                    ],
+                    'response' => []
+                ];
+            }
+            # Jika sudah memiliki invoice_id dari xendit, maka di carikan dengan getInvoice
+            if (!$payment->invoice_id == "") {
+                $invoice = XenditHelpers::getInvoice($payment->invoice_id)->getData();
+                if ($invoice->metadata->code == 200) {
+                    $payment->status = $invoice->response->status;
+                    $payment->save();
+                    return Help::resApi('Berhasil mendapatkan invoice',200,$invoice->response->invoice_url);
+                }
+                if(!$invoice->metadata->code == 404) {
+                    return Help::resApi('Terjadi kesalahan sistem',500);
+                }
+            }
+            # Jika data payment dari xendit tidak ditemukan maka akan di buatkan ulang
+
+            $date_exp = new DateTime($payment->tgl_expired);
+            $date_now = new DateTime(date('Y-m-d H:i:s'));
+            $date_diff = $date_exp->getTimestamp() - $date_now->getTimestamp();
+
+            if(($date_diff)<0){
+                return Help::resApi('Tanggal kadaluarsa sudah terlewat',400);
+            }
+
+            if(($date_diff)>(86400*3)){
+                return Help::resApi('Tanggal kadaluarsa terlalu lama, tidak boleh melebihi h-3, mohon hubungi petugas',400);
+            }
+
+            # Buat invoice payment
+            $new_invoice = XenditHelpers::createInvoice((string)$payment->id_payment_permintaan, 'Pembayaran Permintaan Layanan Telemedicine', $permintaan->biaya_layanan, (string)$date_diff)->getData();
+            if(!$new_invoice->metadata->code == 200) {
+                return Help::resApi('Terjadi kesalahan sistem',500);
+            }
+
+            # Update Invoice ID di payment permintaan
+            $payment->invoice_id = $new_invoice->response->id;
+            $payment->status = $new_invoice->response->status;
+            $payment->save();
+
+            return [
+                'metaData' => [
+                    "code" => 200,
+                    "message" => 'Pembayaran berhasil dibuat'
+                ],
+                'response' => $new_invoice->response->invoice_url
+            ];
+
+        } catch (\Throwable $e) {
+            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
+            $log = ['ERROR INVOICE TELEMEDICINE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::logging($log);
+
+            return Help::resApi('Terjadi kesalahan sistem',500);
+        }
+
+    }
+
+    public function saveRating(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'id_permintaan_telemedicine' => 'required',
+            'star_rating' => 'required',
+            'comments' => 'required',
+        ],[
+            'id_permintaan_telemedicine.required' => 'ID Permintaan Telemedicine Wajib Di isi',
+            'star_rating.required' => 'Bintang Wajib Di isi',
+            'comments.required' => 'Komentar Wajib Di isi',
+        ]);
+        if ($validate->fails()) {
+            return response()->json([
+                'metadata' => [
+                    'message' => $validate->errors()->all()[0],
+                    'code'    => 400,
+                ],
+                'response' => [],
+            ]);
+        }
+        try{
+            if(!$permintaan = PermintaanTelemedicine::where('id_permintaan_telemedicine', $request->id_permintaan_telemedicine)->first()){
+                return [
+                    'metaData' => [
+                        "code" => 204,
+                        "message" => 'Permintaan Telemedicine tidak ditemukan'
+                    ],
+                    'response' => []
+                ];
+            }
+            if(!$rating = Rating::where('permintaan_id', $request->id_permintaan_telemedicine)->where('jenis_layanan', 'telemedicine')->first()){
+                $rating = new Rating;
+                $rating->jenis_layanan = 'telemedicine';
+                $rating->permintaan_id = $request->permintaan_id;
+            }
+            $rating->star_rating = $request->star_rating;
+            $rating->comments = $request->comments;
+            if ($rating->save()) {
+                return [
+                    'metaData' => [
+                        "code" => 200,
+                        "message" => 'Penilaian berhasil disimpan'
+                    ],
+                    'response' => $rating
+                ];
+            } else {
+                return [
+                    'metaData' => [
+                        "code" => 204,
+                        "message" => 'Tidak ada daftar pelayanan aktif.'
+                    ],
+                    'response' => []
+                ];
+            }
+
+        } catch (\Throwable $e) {
+            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
+            $log = ['ERROR SAVE RATING TELEMEDICINE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::logging($log);
+
+            return Help::resApi('Terjadi kesalahan sistem',500);
+        }
+    }
+
+    public function batalkanPermintaan() {
+        $validate = Validator::make($request->all(),[
+            'id_permintaan_telemedicine' => 'required',
+        ],[
+            'id_permintaan_telemedicine.required' => 'ID Permintaan Telemedicine Wajib Di isi',
+        ]);
+        if ($validate->fails()) {
+            return response()->json([
+                'metadata' => [
+                    'message' => $validate->errors()->all()[0],
+                    'code'    => 400,
+                ],
+                'response' => [],
+            ]);
+        }
+        try {
+            if (!$permintaan = PermintaanTelemedicine::where('id_permintaan_telemedicine', $request->id_permintaan_telemedicine)->first()) {
+                return [
+                    'metaData' => [
+                        "code" => 204,
+                        "message" => 'Permintaan Telemedicine tidak ditemukan'
+                    ],
+                    'response' => []
+                ];
+            }
+            if($permintaan->status_pasien != 'belum') {
+                return [
+                    'metaData' => [
+                        "code" => 400,
+                        "message" => 'Gagal membatalkan permintaan'
+                    ],
+                    'response' => []
+                ];
+            }
+            $permintaan->status_pasien = 'batal';
+            if(!$permintaan->save()){
+                return [
+                    'metaData' => [
+                        "code" => 400,
+                        "message" => 'Gagal membatalkan permintaan'
+                    ],
+                    'response' => []
+                ];
+            }
+            return [
+                'metaData' => [
+                    "code" => 200,
+                    "message" => 'Permintaan berhasil dibatalkan'
+                ],
+                'response' => []
+            ];
+        } catch (\Throwable $e) {
+            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
+            $log = ['ERROR BATALKAN TELEMEDICINE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::logging($log);
+
+            return Help::resApi('Terjadi kesalahan sistem',500);
+        }
     }
 
     function tgl_indo($tanggal)

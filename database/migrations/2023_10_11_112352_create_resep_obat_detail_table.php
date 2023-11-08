@@ -16,6 +16,12 @@ class CreateResepObatDetailTable extends Migration
         Schema::create('resep_obat_detail', function (Blueprint $table) {
             $table->bigIncrements('id_resep_obat_detail');
             $table->integer('resep_obat_id');
+            $table->integer('id_obat');
+            $table->integer('qty');
+            $table->decimal('harga', 12, 2);
+            $table->string('nama_obat', 255);
+            $table->string('kode_obat', 25);
+            $table->string('signa', 25);
             $table->timestamps();
         });
     }
