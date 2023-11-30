@@ -24,30 +24,27 @@
 
     <!-- main content -->
     <div class="card main-layer">
-        <div class="card-header">
-            <h5>Tabel Permintaan Telemedicine</h5>
-        </div>
         <div class="card-body">
-            {{-- <div class="row">
-                <div class="col-md-4">
-                    <label>Tanggal MCU</label>
-                    <input type="date" id="tanggal" class="form-control">
-                </div>
-                <div class="col-md-2">
+            <div class="row">
+                <div class="col-md-6"></div>
+                <div class="col-md-3">
                     <label>Status</label>
                     <select name="status" id="status" class="form-control single-select">
-                        <option value="">-Pilih-</option>
-                        <option value="all">Semua</option>
+                        <option value="all" selected>Semua</option>
                         <option value="belum">Belum</option>
-                        <option value="proses">Proses</option>
                         <option value="menunggu">Menunggu</option>
+                        <option value="proses">Proses</option>
                         <option value="batal">Batal</option>
+                        <option value="ditolak">Tolak</option>
                         <option value="selesai">Selesai</option>
                     </select>
                 </div>
-                <div class="col-md-4"></div>
-                <div class="col-md-2"></div>
-            </div> --}}
+                <div class="col-md-3">
+                    <label>Tanggal MCU</label>
+                    <input type="date" id="tanggal" class="form-control">
+                </div>
+            </div>
+            <hr>
             <div class="row" style="margin-top: 2rem">
                 <div class="table-responsive">
                     <table id="datatabel" class="table table-striped table-bordered" width="100%">
@@ -72,7 +69,6 @@
             </div>
         </div>
     </div>
-    <div class="other-page"></div>
     <div class="col-12 modal-dialog"></div>
 </div>
 @endsection
@@ -97,13 +93,14 @@
         var today = year + "-" + month + "-" + day ;
         $("#tanggal").attr("value", today);
 
-        loadTable(today);
-        filterByDate();
+        var status = $("#status").val();
+
+        loadTable(today,status);
+        filterByTwo();
 	});
 
-    function loadTable(tanggal = null){
+    function loadTable(tanggal=null, status=null){
         var table = $('#datatabel').DataTable({
-            "dom": "<'row'<'col-sm-2'l><'col-sm-4 datesearchbox'><'col-sm-3 status'><'col-sm-3'f>>",
             scrollX: true,
             searching: true,
             paging: true,
@@ -121,7 +118,8 @@
             ajax: {
                 url: "{{route('mainPermintaanMcu')}}",
                 data: {
-                    tanggal : tanggal
+                    tanggal: tanggal,
+                    status: status
                 }
             },
             columns: [
@@ -133,24 +131,25 @@
                 { data: "layanan_mcu", name: "layanan_mcu"},
                 { data: "tanggal_kunjungan", name: "tanggal_kunjungan"},
                 { data: "payment", name: "payment"},
-                { data: "status_pasien", name: "status_pasien"},
-                { data: "actions", name: "actions", class: "text-center"},
+                { data: "modifyStatus", name: "modifyStatus"},
+                { data: "opsi", name: "opsi", class: "text-center"},
             ],
-        })
-        $("div.datesearchbox").html('<div class="col"><div class="row mb-3"><label  class="col-sm-3 col-form-label">Tanggal MCU</label><div class="col-sm-6"><input type="date" id="tanggal" class="form-control"></div></div></div>');
-        $("div.status").html('<div class="col"><div class="row mb-3"><label  class="col-sm-2 col-form-label">Status</label><div class="col-sm-8"><select name="status" id="status" class="form-control single-select"><option value="">- Pilih -</option><option value="all">Semua</option><option value="belum">Belum</option><option value="proses">Proses</option><option value="menunggu">Menunggu</option><option value="batal">Batal</option><option value="selesai">Selesai</option></select></div>');
+        });
     }
-
-    function filterByDate() {
+    function filterByTwo() {
         $("#tanggal").change(function (e) {
             e.preventDefault();
             $('#datatabel').DataTable().destroy();
-            loadTable( $("#tanggal").val() );
+            loadTable($(this).val(), $("#status").val());
+        });
+        $("#status").change(function (e) {
+            e.preventDefault();
+            $('#datatabel').DataTable().destroy();
+            loadTable($("#tanggal").val(), $(this).val());
         });
     }
-
-    function bayar(id) {
-        $.post('{{ route("formBayarPermintaanMcu") }}',{id:id})
+    function pilih(id) {
+        $.post('{{ route("formPermintaanMcu") }}',{id:id})
         .done(function(data) {
             if (data.status == 'success') {
                 $('.modal-dialog').html(data.content);
@@ -161,22 +160,71 @@
             Swal.fire('Oops!!',"Terjadi kesalahan sistem!","error");
         });
     }
-
-    function proses(id) {
-        $.post('{{route("prosesPermintaanMcu")}}',{id:id})
-        .done((res)=>{
-            if(res.code==200){
-                Swal.fire('Berhasil', res.message, 'success')
-                location.reload()
-            } else if(res.code==205) {
-                Swal.fire('Peringatan!', res.message, 'warning')
-            }else{
-                Swal.fire('Gagal', res.message, 'error')
+    function detail(id) {
+        $.post('{{ route("formPermintaanMcu") }}',{id:id,view:1})
+        .done(function(data) {
+            if (data.status == 'success') {
+                $('.modal-dialog').html(data.content);
+            } else {
+                Swal.fire('Maaf',data.message,"warning");
             }
-        }).fail(()=>{
-            Swal.fire('Maaf!!', 'Terjadi kesalahan sistem', 'error')
+        }).fail(function() {
+            Swal.fire('Oops!!',"Terjadi kesalahan sistem!","error");
+        });
+    }
+    function terima(id) {
+        Swal.fire({
+            title: 'Konfirmasi',
+            text: "Apakah anda yakin?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#5A6268',
+            confirmButtonText: 'Yakin',
+            cancelButtonText: 'Tidak'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post("{{route('terimaPermintaanMcu')}}",{id:id})
+                .done((data) => {
+                    console.log(data)
+                    if(data.status == "success"){
+                        Swal.fire('Berhasil!', data.message, 'success');
+                        $('#datatabel').DataTable().ajax.reload();
+                    }else{
+                        Swal.fire('Maaf!', data.message, 'error');
+                    }
+                }).fail(() => {
+                    Swal.fire('Maaf!', 'Terjadi Kesalahan!', 'warning');
+                })
+            }
         })
     }
 
+    function tolak(id) {
+        Swal.fire({
+            title: 'Konfirmasi',
+            text: "Apakah anda yakin?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#5A6268',
+            confirmButtonText: 'Yakin',
+            cancelButtonText: 'Tidak'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post("{{route('tolakPermintaanMcu')}}",{id:id})
+                .done((data) => {
+                    if(data.status == "success"){
+                        Swal.fire('Berhasil!', data.message, 'success');
+                        $('#datatabel').DataTable().ajax.reload();
+                    }else{
+                        Swal.fire('Maaf!', data.message, 'error');
+                    }
+                }).fail(() => {
+                    Swal.fire('Maaf!', 'Terjadi Kesalahan!', 'warning');
+                })
+            }
+        })
+    }
 </script>
 @endpush

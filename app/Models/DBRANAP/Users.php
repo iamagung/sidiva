@@ -5,13 +5,18 @@ namespace App\Models\DBRANAP;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Config;
 
 class Users extends Model{
 	use HasFactory;
-	protected $connection = 'dbranap';
-	protected $table = 'users';
+	// protected $connection = 'dbranap';
+	// protected $table = 'users';
 	// protected $primaryKey = 'id';
 	// public $incrementing = false;
+	public function __construct(){
+        $this->setConnection('dbranap');
+		$this->table = Config::get('database.connections.dbranap.database').'.users';
+	}
 
 	public function tenaga_medis_telemedicine(){
 		// return $this->belongsTo('App\Models\TenagaMedisTelemedicine', 'nakes_id', 'id');

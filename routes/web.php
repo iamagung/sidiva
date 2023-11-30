@@ -32,7 +32,11 @@ use App\Http\Controllers\Telemedicine\LayananTelemedicineController as LayananTe
 use App\Http\Controllers\Telemedicine\SyaratTelemedicineController as SyaratTelemedicine;
 use App\Http\Controllers\Telemedicine\PengaturanTelemedicineController as PengaturanTelemedicine;
 use App\Http\Controllers\Telemedicine\TenagaMedisController as TenagaMedisTelemedicine;
+use App\Http\Controllers\InvoiceLayananController as InvoiceLayanan;
 use App\Http\Controllers\WebHook\XenditWebHookController as XenditWebHook;
+use App\Http\Controllers\Artikel\ArtikelController as Artikel;
+use App\Http\Controllers\Activity\ActivityController as Activity;
+use App\Http\Controllers\AutoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,24 +48,18 @@ use App\Http\Controllers\WebHook\XenditWebHookController as XenditWebHook;
 | contains the "web" middleware group. Now create something great!
 |
 */
-Route::get('/clear', function() {
-    $exitCode = Artisan::call('cache:clear');
-    $exitCode = Artisan::call('view:clear');
-    $exitCode = Artisan::call('config:clear');
-    $exitCode = Artisan::call('route:clear');
-    $exitCode = Artisan::call('config:cache');
-    return 'cleared!';
-});
-
 Route::get('/', function () {
 	return redirect()->route('dashboard');
 });
-
 # START AUTH
 Route::get('login', [Login::class, 'index'])->name('login');
 Route::post('proses_login', [Login::class, 'prosesLogin'])->name('proses_login');
 Route::get('logout', [Login::class, 'logout'])->name('logout');
 # END AUTH
+# START invoice view & download
+Route::get('/invoice_layanan/{id}/{jenis}', [InvoiceLayanan::class, 'view'])->name('invoiceLayanan');
+Route::get('/invoice_download/{id}/{jenis}', [InvoiceLayanan::class, 'download'])->name('invoiceDownload');
+# End invoice view
 Route::group(['middleware' => ['auth']], function () {
     #dashboard
     Route::group(['prefix'=>'admin'],function(){
@@ -75,6 +73,7 @@ Route::group(['middleware' => ['auth']], function () {
 			Route::get('/', [Pengguna::class, 'main'])->name('mainPengguna');
             // Route::post('/form', [Pengguna::class, 'form'])->name('formPengguna');
             Route::post('/modalForm', [Pengguna::class, 'form'])->name('formPengguna');
+            Route::get('/search-nakes', [Pengguna::class, 'searchNakes'])->name('searchNakes');
             Route::post('/delete', [Pengguna::class, 'delete'])->name('deletePengguna');
             Route::post('/save', [Pengguna::class, 'store'])->name('savePengguna');
 		});
@@ -137,10 +136,27 @@ Route::group(['middleware' => ['auth']], function () {
         #Laporan Layanan
         Route::group(['prefix'=>'laporan-layanan'],function(){
 			Route::get('/', [LapLayanan::class, 'main'])->name('mainLaporanLayanan');
+            Route::post('/datatable-homecare', [LapLayanan::class, 'datatableHomecare'])->name('datatableHomecare');
+            Route::post('/datatable-telemedicine', [LapLayanan::class, 'datatableTelemedicine'])->name('datatableTelemedicine');
+            Route::post('/datatable-mcu', [LapLayanan::class, 'datatableMcu'])->name('datatableMcu');
 		});
         #Laporan Keuangan
         Route::group(['prefix'=>'laporan-keuangan'],function(){
 			Route::get('/', [LapKeuangan::class, 'main'])->name('mainLaporanKeuangan');
+            Route::post('/datatable-homecare-keuangan', [LapKeuangan::class, 'datatableHomecareKeuangan'])->name('datatableHomecareKeuangan');
+            Route::post('/datatable-telemedicine-keuangan', [LapKeuangan::class, 'datatableTelemedicineKeuangan'])->name('datatableTelemedicineKeuangan');
+            Route::post('/datatable-mcu-keuangan', [LapKeuangan::class, 'datatableMcuKeuangan'])->name('datatableMcuKeuangan');
+		});
+        # Artikel kesehatan
+        Route::group(['prefix'=>'artikel-kesehatan'],function(){
+            Route::get('/', [Artikel::class, 'main'])->name('mainArtikelKesehatan');
+            Route::post('/form', [Artikel::class, 'form'])->name('formArtikelKesehatan');
+            Route::post('/store', [Artikel::class, 'store'])->name('storeArtikelKesehatan');
+            Route::post('/remove', [Artikel::class, 'delete'])->name('removeArtikelKesehatan');
+        });
+        #Activity
+        Route::group(['prefix'=>'activity'],function(){
+			Route::get('/', [Activity::class, 'main'])->name('mainActivity');
 		});
     });
     #Admin HOMECARE
@@ -153,6 +169,7 @@ Route::group(['middleware' => ['auth']], function () {
                 Route::post('/save-permintaan-hc', [PermintaanHC::class, 'save'])->name('savePermintaanHC');
                 Route::post('/tolak-permintaan-hc', [PermintaanHC::class, 'tolak'])->name('tolakPermintaanHc');
                 Route::post('/terima-permintaan-hc', [PermintaanHC::class, 'terima'])->name('terimaPermintaanHc');
+                // Route::post('/form-eresep-hc', [PermintaanHC::class, 'formEresep'])->name('formEresepHC');
             });
             #Riwayat homecare
             Route::group(['prefix'=>'riwayat'],function(){
@@ -200,9 +217,11 @@ Route::group(['middleware' => ['auth']], function () {
             // PERMINTAAN MCU
             Route::group(['prefix'=>'permintaan'],function(){
                 Route::get('/', [PermintaanMcu::class, 'main'])->name('mainPermintaanMcu');
-                Route::post('/bayar', [PermintaanMcu::class, 'form'])->name('formBayarPermintaanMcu');
-                Route::post('/simpan-bayar', [PermintaanMcu::class, 'simpan'])->name('simpanBayarPermintaanMcu');
+                Route::post('/form', [PermintaanMcu::class, 'form'])->name('formPermintaanMcu');
+                Route::post('/simpan', [PermintaanMcu::class, 'simpan'])->name('savePermintaanMcu');
                 Route::post('/proses', [PermintaanMcu::class, 'proses'])->name('prosesPermintaanMcu');
+                Route::post('/tolak-permintaan-mcu', [PermintaanMcu::class, 'tolak'])->name('tolakPermintaanMcu');
+                Route::post('/terima-permintaan-mcu', [PermintaanMcu::class, 'terima'])->name('terimaPermintaanMcu');
             });
             // RIWAYAT MCU
             Route::group(['prefix'=>'riwayat'],function(){
@@ -235,6 +254,7 @@ Route::group(['middleware' => ['auth']], function () {
             Route::group(['prefix'=>'permintaan'],function(){
                 Route::get('/', [PermintaanTelemedicine::class, 'main'])->name('mainPermintaanTelemedicine');
                 Route::post('/form-permintaan-telemedicine', [PermintaanTelemedicine::class, 'form'])->name('formPermintaanTelemedicine');
+                Route::post('/form-eresep-telemedicine', [PermintaanTelemedicine::class, 'formEresep'])->name('formEresepTelemedicine');
                 Route::post('/save-permintaan-telemedicine', [PermintaanTelemedicine::class, 'save'])->name('savePermintaanTelemedicine');
                 Route::post('/tolak-permintaan-telemedicine', [PermintaanTelemedicine::class, 'tolak'])->name('tolakPermintaanTelemedicine');
                 Route::post('/terima-permintaan-telemedicine', [PermintaanTelemedicine::class, 'terima'])->name('terimaPermintaanTelemedicine');
@@ -256,8 +276,10 @@ Route::group(['middleware' => ['auth']], function () {
         Route::group(['prefix'=>'tenaga-medis'],function(){
             Route::get('/', [TenagaMedisTelemedicine::class, 'main'])->name('mainTenagaMedis');
             Route::post('/form', [TenagaMedisTelemedicine::class, 'form'])->name('formTenagaMedisTelemedicine');
+            Route::post('/form-jadwal', [TenagaMedisTelemedicine::class, 'formJadwal'])->name('formJadwalTenagaMedisTelemedicine');
             Route::post('/delete', [TenagaMedisTelemedicine::class, 'delete'])->name('deleteTenagaMedisTelemedicine');
             Route::post('/save', [TenagaMedisTelemedicine::class, 'store'])->name('saveTenagaMedisTelemedicine');
+            Route::post('/save-jadwal', [TenagaMedisTelemedicine::class, 'storeJadwal'])->name('saveJadwalTenagaMedisTelemedicine');
             Route::post('/get-nakes-telemedicine', [TenagaMedisTelemedicine::class, 'getNakesTelemedicine'])->name('getNakesTelemedicine');
         });
         # SYARAT Telemedicine
@@ -273,11 +295,12 @@ Route::group(['middleware' => ['auth']], function () {
         });
     });
 });
-Route::group(['prefix' => 'invoice'], function() {
-    Route::get('/invoice_mcu/{id}', [PermintaanMcu::class, 'invoiceMcu'])->name('invoiceMcu');
-});
 # Start Xendit WebHook
 Route::group(['prefix' => 'xendit-webhook'], function() {
     Route::post('invoice', [XenditWebHook::class, 'invoice']);
 });
 # End Xendit WebHook
+# Start Auto Function
+Route::get('/cek_pembayaran_batal', [Autocontroller::class, 'cekPembayaranBatal'])->name('cekPembayaranBatal');
+Route::get('/cek_permintaan_selesai', [Autocontroller::class, 'cekPermintaanSelesai'])->name('cekPermintaanSelesai');
+# End Auto Function

@@ -7,20 +7,19 @@ use Illuminate\Http\Request;
 use App\Models\Pengguna;
 use App\Http\Libraries\compressFile;
 use App\Helpers\Helpers as Help;
-use DataTables, Validator, DB, Auth, Hash;
+use App\Models\DBRANAP\Users as UserRanap;
+use DataTables, Validator, DB, Auth, Hash, Storage;
 
 class PenggunaController extends Controller
 {
-    function __construct()
-	{
+    function __construct() {
 		$this->title = 'Data Pengguna';
 	}
 
-    public function main(Request $request)
-    {
+    public function main(Request $request) {
         try {
             if(request()->ajax()){
-                $data = Pengguna::orderBy('id','ASC')->get();
+                $data = Pengguna::where('level','!=','pasien')->orderBy('id','ASC')->get();
                 return DataTables::of($data)
                     ->addIndexColumn()
                     ->addColumn('lvl', function($row){
@@ -60,7 +59,7 @@ class PenggunaController extends Controller
     public function form(Request $request)
     {
         if (empty($request->id)) {
-            $data['data'] = '';    
+            $data['data'] = '';
 		}else{
             $data['data'] = Pengguna::where('id',$request->id)->first();
 		}
@@ -68,6 +67,14 @@ class PenggunaController extends Controller
 		return ['content'=>$content];
     }
 
+    public function searchNakes(Request $request) {
+        // return $request->all();
+        $data = UserRanap::where('level_user',$request->level)->orderBy('name','ASC')->get();
+        if (!$data) {
+            return ['code'=>204,'status'=>'error','message'=>'User not found','data'=>[]];
+        }
+        return ['code'=>200,'status'=>'success','message'=>'User not found','data'=>$data];
+    }
     public function store(Request $request)
     {
         try {
@@ -75,16 +82,29 @@ class PenggunaController extends Controller
                 $user = Pengguna::where('id', $request->id)->first();
                 if (!empty($request->password)) {
                     $user->password = bcrypt($request->password);
+                    $user->lihat_password = $request->password;
+                }
+                if ($request->level_user!='perawat'&&$request->level_user!='dokter') {
+                    $user->name     = $request->nama;
                 }
             } else {
                 $user = new Pengguna;
                 $user->password = bcrypt($request->password);
+                $user->lihat_password = $request->password;
+                $user->level    = $request->level;
+                $user->name  = in_array($request->level,['perawat','dokter'])?$request->nama_nakes:$request->nama;
             }
-            $user->name     = $request->nama;
-            $user->level    = $request->level;
             $user->telepon  = $request->telepon;
             $user->username = $request->username;
             $user->email    = $request->username."@gmail.com";
+            if ($request->foto) {
+                $fileName = $request->foto->getClientOriginalName();
+                $filePath = 'pengguna/' . $fileName;
+                $path = Storage::disk('public')->put($filePath, file_get_contents($request->foto));
+                $path = Storage::disk('public')->url($path);
+                // return $fileName;
+                $user->foto = $fileName;
+            }
             $user->save();
 
             if ($user) {
@@ -111,7 +131,7 @@ class PenggunaController extends Controller
                 }
             }
             $delete = DB::connection('dbapm')->table('users')->where('id', $request->id)->delete();
-    
+
             if ($delete) {
                 $return = ['type' => 'success', 'status' => 'success', 'code' => '200', 'message' => 'Berhasil Dihapus'];
             } else {

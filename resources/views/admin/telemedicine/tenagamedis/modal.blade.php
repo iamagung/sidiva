@@ -54,25 +54,25 @@
                             </select>
                         </div>
                     </div>
-                    <div class="row mb-3" id="tarif_form">
+                    {{-- <div class="row mb-3" id="tarif_form">
                         <div class="col-md-12">
                             <label>Tarif <span class="text-danger">*)</span></label>
                         </div>
                         <div class="col-md-12">
-                            <input type="text" id="tarif" name="tarif" class="form-control" placeholder="Tarif" @if($tenaga_medis ) value="{{$tenaga_medis->tarif}}" @else value="0" @endif data-prefix="Rp " data-thousands="." data-decimal="," data-precision="0" data-allow-zero="false">
+                            <input type="text" id="tarif" name="tarif" class="form-control" placeholder="Tarif" @if($tenaga_medis ) value="{{(int)$tenaga_medis->tarif}}" @else value="{{(int)0}}" @endif data-prefix="Rp " data-thousands="." data-decimal="," data-precision="0" data-allow-zero="false">
                         </div>
-                    </div>
-                    <div class="row mb-3" id="jadwal_form">
+                    </div> --}}
+                    {{-- <div class="row mb-3" id="jadwal_form">
                         <div class="col-md-12">
                             <label>Jadwal <span class="text-danger">*)</span></label>
                         </div>
-                        <div class="col-sm-4">
+                        <div class="col-sm-3">
                             <input type="time" id="jam_awal" name="jam_awal" class="form-control" placeholder="Jam Awal">
                         </div>
-                        <div class="col-sm-4">
+                        <div class="col-sm-3">
                             <input type="time" id="jam_akhir" name="jam_akhir" class="form-control" placeholder="Jam Akhir">
                         </div>
-                        <div class="col-sm-4">
+                        <div class="col-sm-3">
                             <span class="btn btn-sm text-white" style="background-color: #7F0E89;" onclick="addJadwal()">Tambah Jadwal</span>
                         </div>
                         <div class="col-md-12 mt-3" id="jadwal_area">
@@ -90,6 +90,17 @@
                                             <span>{{date_format(date_create($jadwal->jam_akhir), 'H:i')}}</span>
                                         </td>
                                         <td>
+                                            <select name="jadwal[{{$key}}][hari]" id="jadwal[{{$key}}][hari]" class="form-control select2">
+                                                <option value="0" @if($jadwal == 0) selected @endif>Minggu</option>
+                                                <option value="1" @if($jadwal == 1) selected @endif>Senin</option>
+                                                <option value="2" @if($jadwal == 2) selected @endif>Selasa</option>
+                                                <option value="3" @if($jadwal == 3) selected @endif>Rabu</option>
+                                                <option value="4" @if($jadwal == 4) selected @endif>Kamis</option>
+                                                <option value="5" @if($jadwal == 5) selected @endif>Jumat</option>
+                                                <option value="6" @if($jadwal == 6) selected @endif>Sabtu</option>
+                                            </select>
+                                        </td>
+                                        <td>
                                             <button class='btn btn-sm btn-danger' title='Delete' onclick='hapusJadwal(this)'><i class='fadeIn animated bx bxs-trash' aria-hidden='true'></i></button>
                                         </td>
                                     </tr>
@@ -98,7 +109,7 @@
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </div> --}}
                     <div class="row mb-3">
                         <div class="col-md-12">
                             <label>No. Telepon <span class="text-danger">*)</span></label>
@@ -127,21 +138,23 @@
     $('document').ready(function () {
         // $("#tarif").maskMoney({thousands:'.', decimal:',', allowZero:false, prefix: 'Rp ',precision: 0});
         loadNakes();
-        $("#tarif").maskMoney();
-        $("#tarif").maskMoney('mask');
+        // $("#tarif").maskMoney();
+        // $("#tarif").maskMoney('mask');
+        // var tarif = '{{$tenaga_medis?$tenaga_medis->tarif:"0"}}';
+        // $("#tarif").maskMoney('mask', tarif);
         var jenisNakes = '{{$tenaga_medis?$tenaga_medis->jenis_nakes:""}}';
-        jadwalMedis = <?php echo json_encode($jadwal_tenaga_medis); ?>;
-        // var jadwalDokter = []
-        // jadwalMedis.forEach(element => {
-        //     jadwalDokter.push({jam_awal: element.jam_awal, jam_akhir: element.jam_akhir});
-        // });
-        // jadwalMedis = jadwalDokter;
-        // renderJadwalToTable();
-        console.log(jadwalMedis);
-        if(jenisNakes == 'perawat') {
-            $('#tarif_form').hide();
-            $('#jadwal_form').hide();
-        }
+        // jadwalMedis = <?php echo json_encode($jadwal_tenaga_medis); ?>;
+        // // var jadwalDokter = []
+        // // jadwalMedis.forEach(element => {
+        // //     jadwalDokter.push({jam_awal: element.jam_awal, jam_akhir: element.jam_akhir});
+        // // });
+        // // jadwalMedis = jadwalDokter;
+        // // renderJadwalToTable();
+        // console.log(jadwalMedis);
+        // if(jenisNakes == 'perawat') {
+            // $('#tarif_form').hide();
+            // $('#jadwal_form').hide();
+        // }
     })
     $(".select2").select2({
         theme: 'bootstrap-5',
@@ -151,11 +164,11 @@
         $('.modal-dialog').html('');
     });
 
-    $('#btn-confirm').click(function (e) { 
+    $('#btn-confirm').click(function (e) {
         e.preventDefault();
-        
+
             var data = new FormData($('#formTenagaMedis')[0]);
-            data.set('tarif',Number($("#tarif").val().replace(/[^0-9,-]+/g,"")));
+            // data.set('tarif',Number($("#tarif").val().replace(/[^0-9,-]+/g,"")));
             $.ajax({
                 url : "{{route('saveTenagaMedisTelemedicine')}}",
                 type: 'POST',
@@ -195,7 +208,7 @@
 
     function loadNakes() {
         var jenis = $('#jenis_nakes').val();
-        
+
         // jika edit nakes
 		// Selected nakes
 		var selectedNakes = "{{ !empty($tenaga_medis) ? $tenaga_medis->nakes_id:'' }}";
@@ -223,47 +236,56 @@
         });
     }
 
-    $('#jenis_nakes').on('change', () => {
-        if($('#jenis_nakes option:selected').text() == 'perawat') {
-            $('#tarif_form').hide();
-            $('#jadwal_form').hide();
+    // $('#jenis_nakes').on('change', () => {
+    //     if($('#jenis_nakes option:selected').text() == 'perawat') {
+    //         $('#tarif_form').hide();
+    //         $('#jadwal_form').hide();
 
-        } else {
-            $('#tarif_form').show();
-            $('#jadwal_form').show();
-        }
-    })
+    //     } else {
+    //         $('#tarif_form').show();
+    //         $('#jadwal_form').show();
+    //     }
+    // })
 
-    function addJadwal() {
-        if($('#jam_awal').val() == '' || $('#jam_awal').val() == null || $('#jam_akhir').val() == '' || $('#jam_akhir').val() == null) {
-            Swal.fire('Maaf!', 'Format jam tidak sesuai', 'warning');
-        } else {
-            jadwalMedis.push({jam_awal:$('#jam_awal').val(),jam_akhir:$('#jam_akhir').val()});
-            console.log(jadwalMedis);
-            renderJadwalToTable();
-            $('#jam_awal').val('');
-            $('#jam_akhir').val('');
-        }
-    }
+    // function addJadwal() {
+    //     if($('#jam_awal').val() == '' || $('#jam_awal').val() == null || $('#jam_akhir').val() == '' || $('#jam_akhir').val() == null) {
+    //         Swal.fire('Maaf!', 'Format jam tidak sesuai', 'warning');
+    //     } else {
+    //         jadwalMedis.push({jam_awal:$('#jam_awal').val(),jam_akhir:$('#jam_akhir').val()});
+    //         console.log(jadwalMedis);
+    //         renderJadwalToTable();
+    //         $('#jam_awal').val('');
+    //         $('#jam_akhir').val('');
+    //     }
+    // }
 
-    function hapusJadwal(button, index) {
-        button.remove();
-        jadwalMedis.splice(index, 1);
-        console.log(jadwalMedis);
-        renderJadwalToTable();
-    }
+    // function hapusJadwal(button, index) {
+    //     button.remove();
+    //     jadwalMedis.splice(index, 1);
+    //     console.log(jadwalMedis);
+    //     renderJadwalToTable();
+    // }
 
-    function renderJadwalToTable() {
-        $('#table_jadwal').html('');
-        jadwalMedis.forEach(function (value, index) {
-            var html = '<tr><td>'+
-                '<input class="d-none" type="time" name="jadwal['+index+'][awal]" id="jadwal['+index+'][awal]" value="'+value.jam_awal+'">'+
-                '<span>'+value.jam_awal.substring(0,5)+'</span></td><td>'+
-                '<input class="d-none" type="time" name="jadwal['+index+'][akhir]" id="jadwal['+index+'][akhir]" value="'+value.jam_akhir+'">'+
-                '<span>'+value.jam_akhir.substring(0,5)+'</span></td>'+
-                '<td><a class="btn btn-danger" title="Delete" onclick="hapusJadwal($(this).parent().parent(), '+index+')"><i class="fadeIn animated bx bxs-trash" aria-hidden="true"></i></a>'
-            '</td></tr>';
-            $('#table_jadwal').append(html);
-        });
-    }
+    // function renderJadwalToTable() {
+    //     $('#table_jadwal').html('');
+    //     jadwalMedis.forEach(function (value, index) {
+    //         var html = '<tr><td>'+
+    //             '<input class="d-none" type="time" name="jadwal['+index+'][awal]" id="jadwal['+index+'][awal]" value="'+value.jam_awal+'">'+
+    //             '<span>'+value.jam_awal.substring(0,5)+'</span></td><td>'+
+    //             '<input class="d-none" type="time" name="jadwal['+index+'][akhir]" id="jadwal['+index+'][akhir]" value="'+value.jam_akhir+'">'+
+    //             '<span>'+value.jam_akhir.substring(0,5)+'apodpawdpo</span></td><td>'+
+    //             '<select name="jadwal['+index+'][hari]" id="jadwal['+index+'][hari]" class="form-control select2">'+
+    //                 '<option value="0">Minggu</option>'+
+    //                 '<option value="1">Senin</option>'+
+    //                 '<option value="2">Selasa</option>'+
+    //                 '<option value="3">Rabu</option>'+
+    //                 '<option value="4">Kamis</option>'+
+    //                 '<option value="5">Jumat</option>'+
+    //                 '<option value="6">Sabtu</option>'+
+    //             '</select></td>'+
+    //             '<td><a class="btn btn-danger" title="Delete" onclick="hapusJadwal($(this).parent().parent(), '+index+')"><i class="fadeIn animated bx bxs-trash" aria-hidden="true"></i></a>'
+    //         '</td></tr>';
+    //         $('#table_jadwal').append(html);
+    //     });
+    // }
 </script>

@@ -14,16 +14,12 @@
             <span style="color: #787878;">Medical Check Up<span>
         </div>
     </div>
-
     <!-- main content -->
     <div class="card main-layer">
-        <div class="card-header">
-            <h5>Tabel Tenaga Kesehatan</h5>
-        </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-3">
-                    <button type="button" class="btn btn-sm" style="background: #4E5FBC; color: #ffffff;" onclick="formAdd()"><i class="bx bxs-plus-square"></i> Tambah Layanan</button>
+                    <button type="button" class="btn btn-sm" style="background: #4E5FBC; color: #ffffff;" onclick="formAdd()"><i class="bx bxs-plus-square"></i> Tambah</button>
                 </div>
                 <div class="col-md-3"></div>
                 <div class="col-md-3"></div>

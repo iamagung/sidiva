@@ -34,7 +34,7 @@ class CreatePermintaanMcuTable extends Migration
             $table->integer('biaya')->nullable();
             $table->string('status_pembayaran')->nullable();
             $table->string('metode_pembayaran')->nullable();
-            $table->string('status_pasien')->nullable()->comment('belum, proses, selesai, batal');
+            $table->string('status_pasien')->nullable()->comment('belum, menunggu, proses, tolak, batal, selesai');
             $table->timestamps();
         });
     }

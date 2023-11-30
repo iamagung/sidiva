@@ -79,10 +79,11 @@ function rupiah($angka){
                         <input type="hidden" name="id" id="id" value="{{ !empty($layanan->id_layanan) ? $layanan->id_layanan : ''}}">
                         <div class="col-4">
                             <label>Kategori Layanan <small>*</small></label>
-                            <select name="kategori_layanan" id="kategori_layanan" class="form-control">
+                            <select name="kategori_layanan" id="kategori_layanan" class="form-control single-select">
                                 <option value="">- Pilih -</option>
-                                <option @if($layanan&&$layanan->kategori_layanan=='APS') selected @endif value="APS">APS</option>
-                                <option @if($layanan&&$layanan->kategori_layanan=='PAKET') selected @endif value="PAKET">Paket</option>
+                                <option @if($layanan&&$layanan->kategori_layanan=='nonpaket') selected @endif value="nonpaket">APS</option>
+                                <option @if($layanan&&$layanan->kategori_layanan=='paket') selected @endif value="paket">PAKET</option>
+                                <option @if($layanan&&$layanan->kategori_layanan=='surat') selected @endif value="surat">SURAT </option>
                             </select>
                         </div>
                         <div class="col-4">
@@ -103,33 +104,53 @@ function rupiah($angka){
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <div class="col-md-12">
+                        <div class="colmd-12">
                             <label>Jenis Layanan</label><br><br>
                             <label class="custom-checkbox">Perorangan
                                 <input type="checkbox" class="radio" value="perorangan" name="jenis_layanan"
                                 @if($layanan&&$layanan->jenis_layanan=='perorangan') checked @endif>
                                 <span class="checkmark"></span>
-                            </label><br>
-                            <label class="custom-checkbox">Kelompok, &nbsp;
-                                <input type="checkbox" class="radio" value="kelompok" name="jenis_layanan"
-                                @if($layanan&&$layanan->jenis_layanan=='kelompok') checked @endif>
-                                <span class="checkmark"></span>
                             </label>
-                            <div class="custom-select-wrapper">
-                                <label>Maksimal Peserta</label>
-                                <select class="custom-select single-select" name="maksimal_peserta" id="maksimal_peserta">
-                                    <option value="">-Pilih-</option>
-                                    <option @if($layanan&&$layanan->maksimal_peserta=='1') selected @endif value="1">1</option>
-                                    <option @if($layanan&&$layanan->maksimal_peserta=='2') selected @endif value="2">2</option>
-                                    <option @if($layanan&&$layanan->maksimal_peserta=='3') selected @endif value="3">3</option>
-                                    <option @if($layanan&&$layanan->maksimal_peserta=='4') selected @endif value="4">4</option>
-                                    <option @if($layanan&&$layanan->maksimal_peserta=='5') selected @endif value="5">5</option>
-                                    <option @if($layanan&&$layanan->maksimal_peserta=='6') selected @endif value="6">6</option>
-                                    <option @if($layanan&&$layanan->maksimal_peserta=='7') selected @endif value="7">7</option>
-                                    <option @if($layanan&&$layanan->maksimal_peserta=='8') selected @endif value="8">8</option>
-                                    <option @if($layanan&&$layanan->maksimal_peserta=='9') selected @endif value="9">9</option>
-                                    <option @if($layanan&&$layanan->maksimal_peserta=='10') selected @endif value="10">10</option>
-                                </select>
+                        </div>
+                        <div class="col-md-12 mb-2">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label class="custom-checkbox">Kelompok, Maksimal Peserta
+                                        <input type="checkbox" class="radio" value="kelompok" name="jenis_layanan"
+                                        @if($layanan&&$layanan->jenis_layanan=='kelompok') checked @endif>
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-control single-select" name="maksimal_peserta" id="maksimal_peserta">
+                                        <option value="">-Pilih-</option>
+                                        <option @if($layanan&&$layanan->maksimal_peserta=='1') selected @endif value="1">1</option>
+                                        <option @if($layanan&&$layanan->maksimal_peserta=='2') selected @endif value="2">2</option>
+                                        <option @if($layanan&&$layanan->maksimal_peserta=='3') selected @endif value="3">3</option>
+                                        <option @if($layanan&&$layanan->maksimal_peserta=='4') selected @endif value="4">4</option>
+                                        <option @if($layanan&&$layanan->maksimal_peserta=='5') selected @endif value="5">5</option>
+                                        <option @if($layanan&&$layanan->maksimal_peserta=='6') selected @endif value="6">6</option>
+                                        <option @if($layanan&&$layanan->maksimal_peserta=='7') selected @endif value="7">7</option>
+                                        <option @if($layanan&&$layanan->maksimal_peserta=='8') selected @endif value="8">8</option>
+                                        <option @if($layanan&&$layanan->maksimal_peserta=='9') selected @endif value="9">9</option>
+                                        <option @if($layanan&&$layanan->maksimal_peserta=='10') selected @endif value="10">10</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 mb-2">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label class="custom-checkbox">Kuota Layanan per-Hari   
+                                        <input type="checkbox" class="radio" value="ada" name="kuota_layanan" @if(!empty($layanan)&&!empty($layanan->kuota_layanan)) checked @endif>
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" name="total_kuota_layanan" id="total_kuota_layanan" class="form-control" value="{{!empty($layanan->kuota_layanan)?$layanan->kuota_layanan:''}}">
+                                </div>
+                                <div class="col-md-6"></div>
                             </div>
                         </div>
                     </div>
@@ -201,6 +222,7 @@ function rupiah($angka){
                             else if(name=='harga'){name='Harga'}
                             else if(name=='nama_layanan'){name='Nama Layanan'}
                             else if(name=='kategori_layanan'){name='Kategori Pelayanan'}
+                            else if(name=='total_kuota_layanan'){name='Kuota Layanan'}
                             n++
                         }
 
@@ -217,6 +239,9 @@ function rupiah($angka){
 
     function ubahFormat(val){
 		$('#harga').val(formatRupiah(val.value,'Rp. '))
+	}
+    function ubahFormat2(val){
+        $('#biaya_per_km').val(formatRupiah(val.value,'Rp. '))
 	}
 
     /* Fungsi formatRupiah */

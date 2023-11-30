@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\TmCustomer;
 use App\Models\LayananHC;
 use App\Models\PaketHC;
+use App\Models\Activity;
 use App\Models\PermintaanHC;
 use App\Models\PengaturanHC;
 use App\Models\SyaratHC;
@@ -14,12 +15,17 @@ use App\Models\TenagaMedis;
 use App\Models\TransaksiHC;
 use App\Models\User;
 use App\Models\LayananPermintaanHc;
+use App\Models\Rating;
+use App\Models\PaymentPermintaan;
+use App\Models\ResepObat;
+use App\Models\ResepObatDetail;
 use App\Helpers\Helpers as Help;
-use DataTables, Validator, DB, Auth, Hash;
+use App\Helpers\XenditHelpers;
+use Validator, DB, Auth, Hash, DateTime;
 
 class ApiPendaftaranHcController extends Controller
 {
-    public function __construct(){
+    public function __construct() {
         date_default_timezone_set('Asia/Jakarta');
     }
     public function getLayananHC(Request $request) {
@@ -75,7 +81,7 @@ class ApiPendaftaranHcController extends Controller
             'telepon' => 'required',
             'latitude' => 'required',
             'longitude' => 'required',
-            'layanan_id' => 'required',
+            'layanan_id.*' => 'required',
             'tanggal_kunjungan' => 'required',
             'waktu_layanan' => 'required'
         ],[
@@ -88,7 +94,7 @@ class ApiPendaftaranHcController extends Controller
             'telepon.required' => 'Telepon Wajib Di isi',
             'latitude.required' => 'Lokasi Wajib Diisi',
             'longitude.required' => 'Lokasi Wajib Diisi',
-            'layanan_id.required' => 'Jenis Layanan Wajib Di isi',
+            'layanan_id.*.required' => 'Jenis Layanan Wajib Di isi',
             'tanggal_kunjungan.required' => 'Tanggal Kunjungan Wajib Diisi',
             'waktu_layanan.required' => 'Waktu Layanan Wajib Diisi'
         ]);
@@ -107,9 +113,16 @@ class ApiPendaftaranHcController extends Controller
                 return Help::resApi('Pendaftaran bisa dilakukan H-3 sampai H-1',400);
             }
             if ($check_nik = $this->checkByNik($request->nik, $tanggalKunjungan) > 0) {# pengecekan agar tidak dobel
-                return Help::custom_response(500, "error", 'Nik telah digunakan untuk mendaftar pada tanggal '.Help::dateIndo($tanggalKunjungan), null);
+                return Help::custom_response(400, "error", 'Nik telah digunakan untuk mendaftar pada tanggal '.Help::dateIndo($tanggalKunjungan), null);
             }
             $pengaturan = PengaturanHC::where('id_pengaturan_hc', 1)->first();
+            if (!$pengaturan) {
+                DB::rollback();
+                return Help::custom_response(400, "error", 'Pengaturan homecare belum diatur, silahkan menghubungi admin.', null);
+            }
+            if (ceil($request->jarak_ke_lokasi) > $pengaturan->jarak_maksimal) { #lokasi pasien tidak boleh lebih dari maksimal pengaturan jarak
+                return Help::resApi('Pendataran tidak bisa dilakukan, Lokasi diluar jangkauan pelayanan',400);
+            }
             if ($day == 'Mon') { # Senin
                 if ($pengaturan->seninBuka == '' || $pengaturan->seninTutup == '') { # If Tidak ada jadwal
                     return Help::resApi('Tidak ada jadwal hari ini.',400);
@@ -204,16 +217,14 @@ class ApiPendaftaranHcController extends Controller
                 $data->waktu_layanan     = $request->waktu_layanan;
                 $data->status_pasien     = 'belum';
                 $data->status_pembayaran = 'pending';
-                # Start calculate
-                $biayaPerKm = DB::table('pengaturan_hc')->where('id_pengaturan_hc', 1)->first()->biaya_per_km;
-                $distance   = Help::calculateDistance($request->latitude,$request->longitude);
-                $data->biaya_ke_lokasi = (int)$biayaPerKm * (int)$distance;
-                # End calculate
+                $data->jarak_ke_lokasi   = $request->jarak_ke_lokasi;
+                $data->biaya_ke_lokasi = (int)$pengaturan->biaya_per_km * ceil($request->jarak_ke_lokasi);
                 $data->save();
                 if (!$data) {
                     DB::rollback();
                     return Help::custom_response(400, "error", 'Pendaftaran homecare gagal', null);
                 }
+                # Insert layanan permintaan homecare
                 foreach ($request->layanan_id as $key => $val) {
                     $data2 = new LayananPermintaanHc;
                     $data2->permintaan_id = $data->id_permintaan_hc;
@@ -224,8 +235,25 @@ class ApiPendaftaranHcController extends Controller
                         return Help::custom_response(400, "error", 'Error save layanan homecare', null);
                     }
                 }
+                # Insert payment
+                $payment = new PaymentPermintaan;
+                $payment->permintaan_id = $data->id_permintaan_hc;
+                $payment->nominal = Help::dataRegistrasiHomecare($data->id_permintaan_hc)['subtotal'];
+                $payment->jenis_layanan = 'homecare';
+                $payment->tgl_expired = date('Y-m-d H:i:s', strtotime('+30 minute'));
+                $payment->status = 'UNCONFIRMED';
+                if(!$payment->save()){
+                    DB::rollback();
+                    return Help::custom_response(400, "error", "Gagal simpan Payment permintaan", null);
+                }
+                # Log activity
+                $activity = Activity::store(Auth::user()->id,"Booking homecare");
+                if (!$activity) {
+                    DB::rollback();
+                    return Help::custom_response(400, "error", "Gagal simpan activity", null);
+                }
                 DB::commit();
-                return Help::custom_response(200, "success", "Ok.", Help::callbackRegistHc($data));
+                return Help::custom_response(200, "success", "Ok", Help::dataRegistrasiHomecare($data->id_permintaan_hc));
             } catch (\Throwable $e) {
                 $log = ['ERROR PENDAFTARAN HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
                 Help::logging($log);
@@ -235,101 +263,240 @@ class ApiPendaftaranHcController extends Controller
             return Help::custom_response(400, "error", $validate->errors()->all()[0], null);
         }
     }
-    // public function getListPembayaranHC($id)
-    // {
-    //     try{
-    //         $permintaan = PermintaanHC::where('id_permintaan_hc', $id)->first();
-    //         $paket      = PaketHC::where('id_paket_hc', $permintaan->paket_hc_id)->first();
+    public function addLayananHomecare(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'id_permintaan_hc' => 'required',
+            'layanan_id.*' => 'required',
+            'alasan_penambahan' => 'required'
+        ],[
+            'id_permintaan_hc.required' => 'ID Permintaan Homecare Wajib Di isi',
+            'layanan_id.*.required' => 'Layanan Wajib Di isi',
+            'alasan_penambahan.required' => 'Alasan Penambahan Wajib Di isi'
+        ]);
+        if ($validate->fails()) {
+            return Help::custom_response(400, "error", $validate->errors()->all()[0], null);
+        }
+        DB::beginTransaction();
+        try {
+            foreach ($request->layanan_id as $layanan) {
+                # Insert layanan permintaan homecare
+                $data = new LayananPermintaanHC;
+                $data->permintaan_id = $request->id_permintaan_hc;
+                $data->layanan_id = $layanan;
+                $data->alasan_penambahan = $request->alasan_penambahan;
+                $data->is_confirm_pasien = true; // sementara default true
+                $data->is_tambahan = true;
+                if ($request->file) {
+                    $fileName = $request->file->getClientOriginalName();
+                    $filePath = 'layanan/' . $fileName;
+                    $path = Storage::disk('public')->put($filePath, file_get_contents($request->file));
+                    $path = Storage::disk('public')->url($path);
+                    $data->file = $fileName;
+                }
+                $data->save();
+                if (!$data) {
+                    DB::rollback();
+                    return Help::custom_response(204, "error", 'Gagal tambah layanan', null);
+                }
+            }
+            # Insert payment
+            $price = 0;
+            $getLayanan = LayananPermintaanHc::select(
+                    'layanan_permintaan_hc.*',
+                    'l.id_layanan_hc',
+                    'l.harga'
+                )->leftJoin('layanan_hc as l', 'l.id_layanan_hc', 'layanan_permintaan_hc.layanan_id')
+                ->where('is_tambahan', true)
+                ->where('is_confirm_pasien', true)
+                ->whereIn('layanan_id',$request->layanan_id)
+                ->get();
+            foreach ($getLayanan as $g) {
+                $price += $g->harga;
+            }
+            $payment = new PaymentPermintaan;
+            $payment->permintaan_id = $request->id_permintaan_hc;
+            $payment->nominal = $price;
+            $payment->jenis_layanan = 'homecare';
+            $payment->tgl_expired = date('Y-m-d H:i:s', strtotime('+30 minute'));
+            $payment->status = 'UNCONFIRMED';
+            if(!$payment->save()){
+                DB::rollback();
+                return Help::custom_response(400, "error", "Gagal simpan Payment layanan", null);
+            }
+            # Log activity
+            $activity = Activity::store(Auth::user()->id,"Tambah layanan homecare");
+            if (!$activity) {
+                DB::rollback();
+                return Help::custom_response(400, "error", "Gagal simpan activity", null);
+            }
+            DB::commit();
+            return Help::custom_response(200, "success", 'OK', null);
+        } catch (\Throwable $e) {
+            DB::rollback();
+            $log = ['ERROR SELESAIKAN PELAYANAN HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::logging($log);
+            return Help::resApi('Terjadi kesalahan sistem',500);
+        }
+    }
+    public function getListPermintaanHC($id) {
+        try{
+            $price = 0;
+        	$permintaan = DB::table('permintaan_hc')->where('id_permintaan_hc', $id)->first();
+        	$layanan = DB::table('layanan_permintaan_hc as lphc')
+        		->leftJoin('layanan_hc as lhc','lhc.id_layanan_hc','lphc.layanan_id')
+        		->where('lphc.permintaan_id', $id)->get();
+        	foreach ($layanan as $key => $val) {
+        		$price += $val->harga;
+        		$layanan['biaya_total_layanan'] = $price;
+        	}
+        	$biayaTotal  	= $layanan['biaya_total_layanan'] + $permintaan->biaya_ke_lokasi;
 
-    //         $data       = [
-    //             'permintaan' => $permintaan,
-    //             'paket'      => $paket
-    //         ];
+            $data = [
+                'data' 	   => $permintaan,
+        		'layanan'  => $layanan,
+        		'subtotal' => $biayaTotal
+            ];
 
-    //         if (!empty($permintaan)) {
-    //             return [
-    //                 'metaData' => [
-    //                     "code" => 200,
-    //                     "message" => 'Berhasil'
-    //                 ],
-    //                 'response' => $data
-    //             ];
-    //         } else {
-    //             return [
-    //                 'metaData' => [
-    //                     "code" => 201,
-    //                     "message" => 'Gagal.'
-    //                 ],
-    //                 'response' => []
-    //             ];
-    //         }
+            if ($permintaan) {
+                return Help::custom_response(200, "success", "Berhasil", $data);
+            }
+            return Help::custom_response(204, "error", "data tidak ditemukan", null);
+        } catch (\Throwable $e) {
+            $log = ['ERROR GET LIST PEMBAYARAN MCU ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::logging($log);
+            return Help::resApi('Terjadi kesalahan sistem',500);
+        }
+    }
+    public function invoiceHC(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'id_permintaan_hc' => 'required'
+        ],[
+            'id_permintaan_hc.required' => 'ID Permintaan Homecare Wajib Di isi'
+        ]);
+        if ($validate->fails()) {
+            return Help::custom_response(400, "error", $validate->errors()->all()[0], null);
+        }
+        try{
+            # Cari data permintaan berdasarkan id_permintaan_telemedicine
+            if(!$permintaan = PermintaanHC::where('id_permintaan_hc', $request->id_permintaan_hc)->first()) {
+                return Help::custom_response(400, "error", "Permintaan homecare tidak ditemukan", null);
+            }
+            if($permintaan->status_pasien=='belum') {
+                return [
+                    'metaData' => [
+                        "code" => 204,
+                        "message" => 'Permintaan Belum Disetujui Petugas'
+                    ],
+                    'response' => []
+                ];
+            }
+            # Cari data payment berdasarkan permintaan_id dan jenis layanan telemedicine
+            if (!$payment = PaymentPermintaan::where('permintaan_id', $request->id_permintaan_hc)->where('jenis_layanan', 'homecare')->whereNotIn('status', ['EXPIRED','PAID','SETTLED'])->first()) {
+                return [
+                    'metaData' => [
+                        "code" => 204,
+                        "message" => 'Invoice tidak ditemukan'
+                    ],
+                    'response' => []
+                ];
+            }
+            # Log activity
+            $activity = Activity::store(Auth::user()->id,"Create invoice layanan homecare");
+            if (!$activity) {
+                DB::rollback();
+                return Help::custom_response(400, "error", "Gagal simpan activity invoice homecare", null);
+            }
+            # Jika sudah memiliki invoice_id dari xendit, maka di carikan dengan getInvoice
+            if (!$payment->invoice_id == "") {
+                # Cek apakah ditolak oleh petugas
+                if(in_array($permintaan->status_pasien,['tolak','batal'])) {
+                    $payment->status = 'EXPIRED';
+                    $invoice = XenditHelpers::expiredInvoice($payment->invoice_id)->getData();
+                }
+                // return $payment;
+                $invoice = XenditHelpers::getInvoice($payment->invoice_id)->getData();
+                if ($invoice->metaData->code == 200) {
+                    $payment->status = $invoice->response->status;
 
-    //     } catch (\Throwable $e) {
-    //         # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
-    //         $log = ['ERROR GET LIST PEMBAYARAN MCU ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
-    //         Help::logging($log);
 
-    //         return Help::resApi('Terjadi kesalahan sistem',500);
-    //     }
-    // }
+                    $payment->save();
+                    // return $invoice->response;
+                    return Help::resApi('Berhasil mendapatkan invoice',200,$invoice->response->invoice_url);
+                }
+                if(!$invoice->metaData->code == 404) {
+                    return Help::resApi('Terjadi kesalahan sistem',500);
+                }
+            }
+            # Jika data payment dari xendit tidak ditemukan maka akan di buatkan ulang
+            $date_exp = new DateTime($payment->tgl_expired);
+            $date_now = new DateTime(date('Y-m-d H:i:s'));
+            $date_diff = $date_exp->getTimestamp() - $date_now->getTimestamp();
+            if(($date_diff)<0){
+                return Help::resApi('Tanggal kadaluarsa sudah terlewat',400);
+            }
+            if(($date_diff)>(86400*3)){
+                return Help::resApi('Tanggal kadaluarsa terlalu lama, tidak boleh melebihi h-3, mohon hubungi petugas',400);
+            }
+            # Buat invoice payment
+            $layananHomecare = LayananPermintaanHc::select(
+                    'layanan_permintaan_hc.id_layanan_permintaan_hc',
+                    'layanan_permintaan_hc.permintaan_id',
+                    'layanan_permintaan_hc.layanan_id',
+                    'layanan_permintaan_hc.status_bayar',
+                    'lc.id_layanan_hc',
+                    'lc.nama_layanan',
+                    'lc.harga',
+                    'lc.jumlah_hari'
+                )
+                ->leftJoin('layanan_hc as lc','lc.id_layanan_hc','layanan_permintaan_hc.layanan_id')
+                ->where('layanan_permintaan_hc.permintaan_id','=',$request->id_permintaan_hc)
+                ->where('layanan_permintaan_hc.status_bayar',null)
+                ->get();
+            if(count($layananHomecare)==0){
+                DB::rollback();
+                return Help::resApi('Tidak ada layanan yang perlu dibayar',204);
+            }
+            $items = array();
+            foreach ($layananHomecare as $key => $val) {
+                $newItem = (object)[
+                    'name' => $val->nama_layanan,
+                    'price' => (float)$val->harga,
+                    'quantity' => 1
+                ];
+                $items[] = $newItem;
+            }
+            $countPermintaanPayment = PaymentPermintaan::where('jenis_layanan','homecare')->where('permintaan_id',$request->id_permintaan_hc)->count();
+            if($countPermintaanPayment==1 && !empty($permintaan->biaya_ke_lokasi)){
+                $items[] = (object)[
+                    'name' => 'Ongkos Kirim',
+                    'price' => (float)$permintaan->biaya_ke_lokasi,
+                    'quantity' => 1
+                ];
+            }
+            $new_invoice = XenditHelpers::createInvoice((string)$payment->id_payment_permintaan, 'Pembayaran Permintaan Layanan Homecare', $payment->nominal, (string)$date_diff, $items)->getData();
+            if(!$new_invoice->metaData->code == 200) {
+                return Help::resApi('Terjadi kesalahan sistem',500);
+            }
+            # Update Invoice ID di payment permintaan
+            $payment->invoice_id = $new_invoice->response->id;
+            $payment->status = $new_invoice->response->status;
+            $payment->save();
+            // return $new_invoice->response;
+            return [
+                'metaData' => [
+                    "code" => 200,
+                    "message" => 'Pembayaran berhasil dibuat'
+                ],
+                'response' => $new_invoice->response->invoice_url
+            ];
 
-    // public function getInvoiceHC($id)
-    // {
-    //     try{
-    //         $permintaan = PermintaanHC::where('id_permintaan', $id)->first();
-    //         $pasien = DB::connection('dbrsud')->table('tm_customer')->where('NoKtp', $permintaan->nik)->first();
-    //         $id_layanan = explode(",", $permintaan->layanan_id);
-    //         $layanan = DB::table('layanan_mcu')->whereIn('id_layanan', $id_layanan)->get();
-    //         $sum = 0;
-    //         // return $layanan;
-    //         for($i = 0; $i < count($layanan); $i++){
-    //             $sum += $layanan[$i]->harga;
-    //         }
-    //         # update to permintaan_mcu
-    //         $permintaan->biaya = $sum;
-    //         $permintaan->metode_pembayaran = 'Tunai';
-    //         $permintaan->save();
-    //         # insert to transaksi_mcu
-    //         $transaksi = new TransaksiMCU;
-    //         $transaksi->id_permintaan_mcu = $id;
-    //         $transaksi->nominal           = $sum;
-    //         $transaksi->invoice           = "INV/".date('Ymd')."/HOMECARE"."/".rand(20, 200);
-    //         $transaksi->status            = 'pending';
-    //         $transaksi->save();
-
-    //         $data = [
-    //             'permintaan'    => $permintaan,
-    //             'pasien'        => $pasien,
-    //             'layanan'       => $layanan,
-    //             'transaksi'     => $transaksi
-    //         ];
-    //         if ($permintaan) {
-    //             return [
-    //                 'metaData' => [
-    //                     "code" => 200,
-    //                     "message" => 'Berhasil'
-    //                 ],
-    //                 'response' => $data
-    //             ];
-    //         } else {
-    //             return [
-    //                 'metaData' => [
-    //                     "code" => 201,
-    //                     "message" => 'Gagal.'
-    //                 ],
-    //                 'response' => []
-    //             ];
-    //         }
-
-    //     } catch (\Throwable $e) {
-    //         # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
-    //         $log = ['ERROR GET LIST PEMBAYARAN MCU ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
-    //         Help::logging($log);
-
-    //         return Help::resApi('Terjadi kesalahan sistem',500);
-    //     }
-    // }
-
+        } catch (\Throwable $e) {
+            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
+            $log = ['ERROR INVOICE HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::logging($log);
+            return Help::resApi('Terjadi kesalahan sistem',500);
+        }
+    }
     public function selesaikanPelayananHC(Request $request) {
         try {
             $data = PermintaanHC::where('id_permintaan_hc', $request->id_permintaan_hc)->first();
@@ -338,6 +505,12 @@ class ApiPendaftaranHcController extends Controller
             if (!$data) {
                 return Help::custom_response(204, "error", 'Gagal menyelesaikan permintaan homecare', null);
             }
+            # Log activity
+            $activity = Activity::store(Auth::user()->id,"Menyelesaikan layanan homecare");
+            if (!$activity) {
+                DB::rollback();
+                return Help::custom_response(400, "error", "Gagal simpan activity selesaikan homecare", null);
+            }
             return Help::custom_response(200, "success", 'Ok', $data);
         } catch (\Throwable $e) {
             $log = ['ERROR SELESAIKAN PELAYANAN HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
@@ -345,271 +518,251 @@ class ApiPendaftaranHcController extends Controller
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-
     public function batalOtomatisPermintaanHC(Request $request) {
         try {
             $data = PermintaanHC::where('id_permintaan_hc', $request->id_permintaan_hc)->first();
             $data->status_pasien = 'batal';
             $data->save();
             if (!$data) {
-                return Help::custom_response(204, "error", 'Gagal membatalkan permintaan homecare', null);
+                return Help::custom_response(400, "error", 'Gagal membatalkan permintaan homecare', null);
+            }
+            # Log activity
+            $activity = Activity::store(Auth::user()->id,"Pembatalan otomatis layanan homecare");
+            if (!$activity) {
+                DB::rollback();
+                return Help::custom_response(400, "error", "Gagal simpan activity batal homecare", null);
             }
             return Help::custom_response(200, "success", 'Ok', $data);
         } catch (\Throwable $e) {
-            $log = ['ERROR SELESAIKAN PELAYANAN HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            $log = ['ERROR BATAL PELAYANAN HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-
-    public function getPermintaanTM($id)
-    {
+    public function riwayatPermintaanHomecare(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'nik' => 'required'
+        ],[
+            'nik.required' => 'NIK Wajib Di isi'
+        ]);
+        if ($validate->fails()) {
+            return Help::custom_response(400, "error", $validate->errors()->all()[0], null);
+        }
         try{
-            $user = DB::connection('dbapm')->table('users')->where('id', $id)->first();
-            $tm = TenagaMedis::where('kode_dokter', $user->kode_dokter)->first();
-            if (!$tm) {
-                return Help::custom_response(204, "error", 'Tenaga medis tidak ditemukan', null);
+            $data['permintaan'] = PermintaanHC::with('rating')->where('nik', $request->nik)->orderBy('id_permintaan_hc','DESC')->get();
+            if(count($data['permintaan'])==0){
+                return Help::custom_response(204, "error", 'Tidak ada riwayat homecare', null);
             }
-            $permintaan = PermintaanHC::where('tenaga_medis_id', $tm->id_tenaga_medis)
-                ->where('tanggal_kunjungan', date('Y-m-d'))
-                ->get();
-            if (count($permintaan==0)) {
+            return Help::resApi('Berhasil',200,$permintaan);
+        } catch (\Throwable $e) {
+            $log = ['ERROR GET RIWAYAT HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            Help::logging($log);
+            return Help::resApi('Terjadi kesalahan sistem',500);
+        }
+    }
+    public function saveRatingHc(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'id_permintaan_hc' => 'required',
+            'star_rating' => 'required',
+            'comments' => 'required',
+        ],[
+            'id_permintaan_hc.required' => 'ID Permintaan Homecare Wajib Di isi',
+            'star_rating.required' => 'Bintang Wajib Di isi',
+            'comments.required' => 'Komentar Wajib Di isi',
+        ]);
+        if ($validate->fails()) {
+            return Help::custom_response(400, "error", $validate->errors()->all()[0], null);
+        }
+        try{
+            if(!$permintaan = PermintaanHC::where('id_permintaan_hc', $request->id_permintaan_hc)->first()){
                 return Help::custom_response(204, "error", 'Permintaan homecare tidak ditemukan', null);
             }
-            return Help::custom_response(200, "success", 'Success', $permintaan);
+            if(!$rating = Rating::where('permintaan_id', $request->id_permintaan_hc)->where('jenis_layanan', 'homecare')->first()){
+                $rating = new Rating;
+                $rating->jenis_layanan = 'homecare';
+                $rating->permintaan_id = $request->id_permintaan_hc;
+            }
+            $rating->star_rating = $request->star_rating;
+            $rating->comments = $request->comments;
+            if (!$rating->save()) {
+                return Help::custom_response(400, "error", 'gagal', null);
+            }
+            # Log activity
+            $activity = Activity::store(Auth::user()->id,"Memberi penilaian layanan homecare");
+            if (!$activity) {
+                DB::rollback();
+                return Help::custom_response(400, "error", "Gagal simpan activity rating homecare", null);
+            }
+            return Help::custom_response(200, "success", 'Ok', $rating);
         } catch (\Throwable $e) {
-            $log = ['ERROR GET PERMINTAAN TM ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            $log = ['ERROR SAVE RATING HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-
-    public function riwayatPermintaanTM(Request $request) {
+    public function invoiceResep(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'id_permintaan_hc' => 'required',
+            'diantar' => 'required'
+        ],[
+            'id_permintaan_hc.required' => 'ID Permintaan Homecare Wajib Di isi',
+            'diantar.required' => 'Metode penerimaan obat Wajib Di isi'
+        ]);
+        if ($validate->fails()) {
+            return Help::resApi($validate->errors()->all()[0],400);
+        }
+        DB::beginTransaction();
         try{
-            $permintaan = PermintaanHC::where('nik', $request->nik)
-                ->whereIn('status_pasien', ['proses', 'selesai'])
-                ->orderBy('id_permintaan_hc', 'DESC')
-                ->get();
-            if (count($permintaan) > 0) {
-                return Help::custom_response(200, "success", 'Success', $permintaan);
+            # Cari data permintaan berdasarkan id_permintaan_hc
+            if(!$permintaan = PermintaanHC::where('id_permintaan_hc', $request->id_permintaan_hc)->first()) {
+                DB::rollback();
+                return Help::resApi('Permintaan Telemedicine Tidak Ditemukan',204);
             }
-            return Help::custom_response(204, "error", 'Not found', $permintaan);
-        } catch (\Throwable $e) {
-            $log = ['ERROR RIWAYAT PERMINTAAN TM ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
-            Help::logging($log);
-            return Help::resApi('Terjadi kesalahan sistem',500);
-        }
-    }
-
-    public function getProfileTM(Request $request) {
-        try {
-            $data = User::where('id', $request->id)->first();
-            if ($data) {
-                return Help::custom_response(200, "success", "found", $data);
+            # Cari data payment berdasarkan permintaan_id dan jenis layanan homecare
+            if (!$payment = PaymentPermintaan::where('permintaan_id', $request->id_permintaan_hc)->where('jenis_layanan', 'eresep_homecare')->first()) {
+                if(in_array($permintaan->status_pasien,['selesai','batal','tolak'])) {
+                    DB::rollback();
+                    return Help::resApi('Tidak ada resep yang dibayar',204);
+                }
+                DB::rollback();
+                return Help::resApi('Resep masih di proses',204);
             }
-            return Help::custom_response(204, "error", "Data not found.", null);
-        } catch (\Throwable $e) {
-            $log = ['ERROR GET USER TM ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
-            Help::logging($log);
-            return Help::resApi('Terjadi kesalahan sistem',500);
-        }
-    }
+            # Jika sudah memiliki invoice_id dari xendit, maka di carikan dengan getInvoice
+            if (!$payment->invoice_id == "") {
+                # Cek apakah ditolak oleh petugas
+                if(in_array($permintaan->status_pasien,['tolak','batal']) || $permintaan->status_pembayaran == 'batal') {
+                    $payment->status = 'EXPIRED';
+                    $invoice = XenditHelpers::expiredInvoice($payment->invoice_id)->getData();
+                }
+                $invoice = XenditHelpers::getInvoice($payment->invoice_id)->getData();
+                if ($invoice->metaData->code == 200) {
+                    $payment->status = $invoice->response->status;
 
-    public function updateProfileTM(Request $request)
-    {
-        try {
-            $getUser = DB::connection('dbapm')->table('users')->where('id', $request->id)->first();
-            if ($request->password != '') {
-                $data = [
-                    'name_user' => $request->nama,
-                    'email'     => $request->username,
-                    'password'  => Hash::make($request->password),
-                    'phone'     => $request->telp,
+                    $payment->save();
+                    return Help::resApi('Berhasil mendapatkan invoice',200,$invoice->response->invoice_url);
+                }
+                if(!$invoice->metaData->code == 404) {
+                    DB::rollback();
+                    return Help::resApi('Terjadi kesalahan sistem',500);
+                }
+            }
+            # Jika data payment dari xendit tidak ditemukan maka akan di buatkan ulang
+            $date_exp = new DateTime($payment->tgl_expired);
+            $date_now = new DateTime(date('Y-m-d H:i:s'));
+            $date_diff = $date_exp->getTimestamp() - $date_now->getTimestamp();
+            if(($date_diff)<0){
+                DB::rollback();
+                return Help::resApi('Tanggal kadaluarsa sudah terlewat',400);
+            }
+            if(($date_diff)>(86400*3)){
+                DB::rollback();
+                return Help::resApi('Tanggal kadaluarsa terlalu lama, tidak boleh melebihi h-3, mohon hubungi petugas',400);
+            }
+            if(!$resep = ResepObat::where('permintaan_id', $request->id_permintaan_hc)->where('jenis_layanan', 'homecare')->first()){
+                DB::rollback();
+                return Help::resApi('Tidak ditemukan resep',204);
+            }
+            $resepDetail = ResepObatDetail::where('resep_obat_id', $resep->id_resep_obat)->get();
+            if(count($resepDetail) <= 0){
+                DB::rollback();
+                return Help::resApi('Tidak ada resep yang perlu dibayar',204);
+            }
+            $items = array();
+            # Buat invoice payment
+            foreach ($resepDetail as $key => $value) {
+                $name = (strlen($value->nama_obat) > 2) ? (substr($value->nama_obat, 0, 2)."****") : $value->nama_obat."****";
+                $newItem = (object)[
+                    'name' => $value->kode_obat.$name,
+                    'price' => (float)$value->harga,
+                    'quantity' => (int)$value->qty
                 ];
+                $items[] = $newItem;
+            }
+            if($resep->diantar == "") {
+                $resep->diantar = $request->diantar;
+            }
+            if(!$resep->save()) {
+                DB::rollback();
+                return Help::resApi('Gagal mendapatkan invoice',400);
+            }
+            if($request->diantar == 'tidak') {
+                $total_bayar = $resep->total_bayar;
             } else {
-                $data = [
-                    'name_user' => $request->nama,
-                    'email'     => $request->username,
-                    'password'  => Hash::make($getUser->password),
-                    'phone'     => $request->telp,
+                $total_bayar = $resep->total_bayar + $payment->ongkos_kirim;
+                $items[] = (object)[
+                    'name' => 'Ongkos Kirim',
+                    'price' => (float)$payment->ongkos_kirim,
+                    'quantity' => 1
                 ];
             }
-            $updateUser = DB::connection('dbapm')->table('users')->where('id', $request->id)->update($data);
-            if($updateUser){
-                $respon = [
-                    'metaData' => [
-                        "code" => 200,
-                        "message" => 'Berhasil Update Data'
-                    ],
-                    'response' => DB::connection('dbapm')->table('users')->where('id', $request->id)->first()
-                ];
-            }else{
-                $respon = [
-                    'metaData' => [
-                        "code" => 201,
-                        "message" => 'Gagal Update Data'
-                    ],
-                    'response' => []
-                ];
+            $new_invoice = XenditHelpers::createInvoice((string)$payment->id_payment_permintaan, 'Pembayaran Eresep Homecare', $total_bayar, (string)$date_diff, $items)->getData();
+            if(!$new_invoice->metaData->code == 200) {
+                DB::rollback();
+                return Help::resApi('Terjadi kesalahan sistem',500);
             }
-            return $respon;
+            # Update Invoice ID di payment permintaan
+            $payment->invoice_id = $new_invoice->response->id;
+            $payment->status = $new_invoice->response->status;
+            $payment->save();
+            # Log activity
+            $activity = Activity::store(Auth::user()->id,"Create invoice resep homecare");
+            if (!$activity) {
+                DB::rollback();
+                return Help::custom_response(400, "error", "Gagal simpan activity Create invoice resep", null);
+            }
+            DB::commit();
+            return Help::resApi('Pembayaran berhasil dibuat',200,$new_invoice->response->invoice_url);
         } catch (\Throwable $e) {
             # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
-            $log = ['ERROR UPDATE USER TM ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            $log = ['ERROR INVOICE ERESEP HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
-
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-
-    public function saveRatingHC(Request $request)
-    {
-        try{
-            $data = [
-                'permintaan_hc_id' => $request->id_permintaan_hc,
-                'comments'          => $request->comments,
-                'star_rating'       => $request->rating
-            ];
-            $rating = DB::table('rating_hc')->insert($data);
-
-            if ($rating) {
-                return [
-                    'metaData' => [
-                        "code" => 200,
-                        "message" => 'Berhasil'
-                    ],
-                    'response' => DB::table('rating_hc')->where('permintaan_hc_id', $request->id_permintaan_hc)->first()
-                ];
-            } else {
-                return [
-                    'metaData' => [
-                        "code" => 201,
-                        "message" => 'Gagal.'
-                    ],
-                    'response' => []
-                ];
+    public function getResep(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'id_permintaan_hc' => 'required'
+        ],[
+            'id_permintaan_hc.required' => 'ID Permintaan Homecare Wajib Di isi'
+        ]);
+        if ($validate->fails()) {
+            return Help::resApi($validate->errors()->all()[0],400);
+        }
+        try {
+            $permintaan = PermintaanHC::where('id_permintaan_hc', $request->id_permintaan_hc)
+            ->has('resep_obat')
+            ->with('resep_obat')
+            ->first();
+            if(!$permintaan) {
+                return Help::resApi('Permintaan / Resep tidak ditemukan',204);
             }
+
+            $resep = ResepObat::where('permintaan_id', $request->id_permintaan_hc)->where('jenis_layanan', 'homecare');
+            $resep->when($permintaan->resep_obat->status_pembayaran!='lunas', fn($q) =>
+                $q->has('resep_obat_detail')->with('resep_obat_detail', function ($qq) {
+                    $qq->selectRaw('(CASE WHEN (LENGTH(nama_obat)>=3) THEN CONCAT(SUBSTRING(nama_obat, 1, 2) , "****") WHEN (LENGTH(nama_obat)=2) THEN CONCAT(nama_obat, "****") ELSE CONCAT(nama_obat, "*****") END) AS nama_obat,resep_obat_id,kode_obat,qty,signa,harga');
+                })
+            );
+            $resep->when($permintaan->resep_obat->status_pembayaran=='lunas', fn($q) =>
+                $q->has('resep_obat_detail')->with('resep_obat_detail', function ($qq) {
+                    $qq->selectRaw('nama_obat,resep_obat_id,kode_obat,qty,signa,harga');
+                })
+            );
+            $resep = $resep->get();
+            if(!$resep) {
+                return Help::resApi('Resep Tidak Ditemukan',204);
+            }
+            return Help::resApi('Resep Ditemukan',200,$resep);
 
         } catch (\Throwable $e) {
             # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
-            $log = ['ERROR SAVE RATING HC ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+            $log = ['ERROR GET RESEP TELEMEDICINE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
 
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-
-    // public function getPaymentHC(Request $request)
-    // {
-    //     try {
-    //         // $metode = $this->tripay->initChannelPembayaran()->getData();
-    //         $metode = $this->tripay->initChannelPembayaran()->getData()[0]->payment;
-    //         if ($metode) {
-    //             $respon = [
-    //                 'metaData' => [
-    //                     "code" => 200,
-    //                     "message" => 'Berhasil'
-    //                 ],
-    //                 'response' => $metode
-    //             ];
-    //         } else {
-    //             $respon = [
-    //                 'metaData' => [
-    //                     "code" => 500,
-    //                     "message" => 'Data Tidak Ditemukan'
-    //                 ],
-    //                 'response' => []
-    //             ];
-    //         }
-
-    //         return response()->json($respon);
-    //     } catch (\Throwable $e) {
-    //         # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
-    //         $log = ['ERROR GET PAYMENT HOMECARE ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
-    //         Help::logging($log);
-
-    //         return Help::resApi('Terjadi kesalahan sistem',500);
-    //     }
-    // }
-
-    // public function transaksiProcessHC(Request $request)
-    // {
-    //     # initial request
-    //     $id_permintaan_hc = $request->id_permintaan_hc;
-    //     $nominal = $request->nominal;
-    //     $metode = $request->metode;
-
-    //     # insert to db local
-    //     $transaksi = new TransaksiHC;
-    //     $transaksi->id_permintaan_hc = $id_permintaan_hc;
-    //     $transaksi->nominal          = $nominal;
-    //     $transaksi->invoice          = "INV/".date('Ymd')."/HOMECARE"."/".rand(20, 200);
-    //     $transaksi->save();
-
-    //     # get permintaan homecare
-    //     $permintaanHC = PermintaanHC::where('id_permintaan_hc', $id_permintaan_hc)->first();
-    //     $merchantRef = $transaksi->invoice;
-    //     $init = $this->tripay->initTransaction($merchantRef);
-    //     $init->setAmount($transaksi->nominal); // for close payment
-    //     // $init->setMethod('BNIVA'); // for open payment
-
-    //     $signature = $init->createSignature();
-
-    //     $transaction = $init->closeTransaction(); // define your transaction type, for close transaction use `closeTransaction()`
-    //     $transaction->setPayload([ # persiapan data untuk dikirim ke merchant
-    //     // $transaction->setPayload([
-    //         'method'            => $metode,
-    //         'merchant_ref'      => $merchantRef,
-    //         'amount'            => $init->getAmount(),
-    //         'customer_name'     => $permintaanHC->nama,
-    //         // 'customer_email'    => $permintaanHC->email,
-    //         'customer_phone'    => $permintaanHC->no_telepon,
-    //         'order_items'       => [
-    //             [
-    //                 'sku'       => 'PELAYANANHC',
-    //                 'name'      => 'Pelayanan Home Care',
-    //                 'price'     => $init->getAmount(),
-    //                 'quantity'  => 1
-    //             ]
-    //         ],
-    //         'callback_url'      => 'https://namadomain.com/callback', // url api callback
-    //         'return_url'        => 'https://namadomain.com/redirect', // redirect ke halaman pembayaran
-    //         'expired_time'      => (time()+(24*60*60)), // 24 jam
-    //         'signature'         => $init->createSignature()
-    //     ]); // set your payload, with more examples https://tripay.co.id/developer
-
-    //     $getPayload = $transaction->getPayload();
-    //     $get_data_from_server = $transaction->getJson();
-
-    //     return redirect($get_data_from_server->data->checkout_url); // redirect halaman ke halaman pembayaran
-    // }
-
-    // public function callbackHC(Request $request)
-    // {
-    //     $init = $this->tripay->initCallback();
-    //     $result = $init->getJson(); // get json callback
-
-    //     if ($request->header("X-Callback-Event") != "payment_status") {
-    //         die("Akses dilarang");
-    //     }
-
-    //     $transaksi = TransaksiHC::where('invoice', $result->merchant_ref)->first();
-    //     if ($transaksi) { # pengecekan apakah ada transaksi
-    //         if ($result->status == "PAID") { # pengecekan apakah transaksi sudah dibayar
-    //             $transaksi->status == "PAID";
-    //         }
-
-    //         $transaksi->status = $result->status;
-    //         $transaksi->update();
-
-    //         return response()->json($result);
-    //     }
-
-    //     return response()->json(['message' => "Transaksi tidak ditemukan"]);
-    // }
-
-    public function checkByNik($nik, $tanggal) //check nik apakah sudah digunakan
-    {
+    public function checkByNik($nik, $tanggal) {//check nik apakah sudah digunakan
         $check = PermintaanHC::where('nik','=',$nik)->where('tanggal_kunjungan','=',$tanggal)->count();
         return $check;
     }

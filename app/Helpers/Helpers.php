@@ -5,7 +5,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Firebase\JWT\JWT;
 use App\Models\User;
+use App\Models\PaymentPermintaan;
 use App\Models\ResepObat;
+use App\Models\ResepObatDetail;
+use App\Models\PermintaanTelemedicine;
 class Helpers{
 	# Sender otp start
 	public static function messageSenderOtp($params){
@@ -94,9 +97,8 @@ class Helpers{
 		return $nextKode = 'W'.date("ym").(string)($num+1);
 	}
 	# Generate no registrasi mcu
-	public static function generateNoRegMcu($tanggal)
-	{
-		$prefix = 'Reg-';
+	public static function generateNoRegMcu($tanggal) {
+		$prefix = 'M-';
 		$length = strlen($prefix)+3;
 		$regist = DB::table('permintaan_mcu')->select('no_registrasi')
 				->where('tanggal_kunjungan',$tanggal)
@@ -111,9 +113,8 @@ class Helpers{
 		return $nextAntri 	= "$prefix".$reg;
 	}
 	# Generate no registrasi homecare
-	public static function generateNoRegHc($request)
-	{
-		$prefix = 'Reg-';
+	public static function generateNoRegHc($request) {
+		$prefix = 'H-';
 		$length = strlen($prefix)+3;
 		$regist = DB::table('permintaan_hc')->select('no_registrasi')
 				->where('tanggal_kunjungan',date('Y-m-d', strtotime($request->tanggal_kunjungan)))
@@ -128,9 +129,8 @@ class Helpers{
 		return $nextAntri 	= "$prefix".$reg;
 	}
 	# Generate no registrasi telemedicine
-	public static function generateNoRegTelemedicine($request)
-	{
-		$prefix = 'Reg-';
+	public static function generateNoRegTelemedicine($request) {
+		$prefix = 'T-';
 		$length = strlen($prefix)+3;
 		$regist = DB::table('permintaan_telemedicine')->select('no_registrasi')
 				->where('tanggal_kunjungan',$request->tanggal_kunjungan)
@@ -145,14 +145,43 @@ class Helpers{
 		return $nextAntri 	= "$prefix".$reg;
 	}
 	# Generate no resep telemedicine
-	public static function generateNoResepTelemedicine()
-	{
+	public static function generateNoResepTelemedicine() {
 		$prefix = 'RCP/TELE/';
 		$tahun = date('Y/m');
 		$prefix .= $tahun.'/';
 		$regist = ResepObat::select('no_resep')
 				->where('no_resep','like',"$prefix%")
 				->orderBy('no_resep','desc')->first();
+		$num = 0;
+		if(!empty($regist)){
+			$num = (int)substr($regist->no_resep, -6);
+		}
+		$reg       			= sprintf("%06d",$num+1);
+		return $nextAntri 	= "$prefix".$reg;
+	}
+	# Generate no resep telemedicine
+	public static function generateNoResepHc() {
+		$prefix = 'RCP/HOCA/';
+		$tahun = date('Y/m');
+		$prefix .= $tahun.'/';
+		$regist = ResepObat::select('no_resep')
+				->where('no_resep','like',"$prefix%")
+				->orderBy('no_resep','desc')->first();
+		$num = 0;
+		if(!empty($regist)){
+			$num = (int)substr($regist->no_resep, -6);
+		}
+		$reg       			= sprintf("%06d",$num+1);
+		return $nextAntri 	= "$prefix".$reg;
+	}
+    # Generate no invoice local
+	public static function generateInvoice() {
+		$prefix = 'INV/';
+		$tahun = date('Ymd');
+		$prefix .= $tahun.'/';
+		$regist = PaymentPermintaan::select('nomor_referensi')
+				->where('nomor_referensi','like',"$prefix%")
+				->orderBy('nomor_referensi','desc')->first();
 		$num = 0;
 		if(!empty($regist)){
 			$num = (int)substr($regist->no_resep, -6);
@@ -172,36 +201,92 @@ class Helpers{
 		return $randomString;
 	}
 	# Callback pendaftaran mcu
-	public static function callbackRegistMcu($params)
-	{
-		$permintaan =  DB::table('permintaan_mcu')->where('id_permintaan', $params->id_permintaan)->first();
-		$id_layanan = explode(",", $permintaan->layanan_id);
-		$layanan = DB::table('layanan_mcu')->whereIn('id_layanan', $id_layanan)->get();
-
-		return [
-			'data' 		=> $permintaan,
-			'layanan' 	=> $layanan
-		];
-	}
-	# Callback pendaftaran homecare
-	public static function callbackRegistHc($params)
-	{
+	public static function dataRegistrasiMCU($params) {
 		$price = 0;
-		$permintaan = DB::table('permintaan_hc')->where('id_permintaan_hc', $params->id_permintaan_hc)->first();
-		$layanan = DB::table('layanan_permintaan_hc as lphc')
-			->leftJoin('layanan_hc as lhc','lhc.id_layanan_hc','lphc.layanan_id')
-			->where('lphc.permintaan_id', $permintaan->id_permintaan_hc)->get();
+		$permintaan = DB::table('permintaan_mcu')->where('id_permintaan', $params)->first();
+		$layanan = DB::table('layanan_permintaan_mcu as lpm')
+			->leftJoin('layanan_mcu as lm','lm.id_layanan','lpm.layanan_id')
+			->where('lpm.permintaan_id', $params)->get();
 		foreach ($layanan as $key => $val) {
 			$price += $val->harga;
-			$layanan['total_price'] = $price;
 		}
-		$jumlahKm		= Helpers::calculateDistance($permintaan->latitude, $permintaan->longitude);
-		$biayaTotal  	= $layanan['total_price'] + (int)$permintaan->biaya_ke_lokasi;
+		$biayaTotal  	= $price;
+		if ($permintaan->tempat_mcu!='RS') {
+			$biayaTotal  	= $price + $permintaan->biaya_ke_lokasi;
+		}
+		$payment = DB::table('payment_permintaan')->where('jenis_layanan', 'mcu')->where('permintaan_id',$params)->first();
 		return [
 			'data' 	   => $permintaan,
 			'layanan'  => $layanan,
-			'jumlahKm' => $jumlahKm." Km",
-			'total'		=> $biayaTotal
+			'subtotal' => $biayaTotal,
+			'payment'  => $payment
+		];
+	}
+	# Callback pendaftaran homecare
+	public static function dataRegistrasiHomecare($params) {
+		$price = 0;
+		$permintaan = DB::table('permintaan_hc')->where('id_permintaan_hc', $params)->first();
+		$layanan = DB::table('layanan_permintaan_hc as lphc')
+			->leftJoin('layanan_hc as lhc','lhc.id_layanan_hc','lphc.layanan_id')
+			->where('lphc.permintaan_id', $params)->get();
+		foreach ($layanan as $key => $val) {
+			$price += $val->harga;
+		}
+		$biayaTotal  	= $price + (int)$permintaan->biaya_ke_lokasi;
+		$payment = DB::table('payment_permintaan')->where('jenis_layanan', 'homecare')->where('permintaan_id',$params)->first();
+		return [
+			'data' 	   => $permintaan,
+			'layanan'  => $layanan,
+			'subtotal' => $biayaTotal,
+			'payment'  => $payment
+		];
+	}
+	# Callback pendaftaran telemedicine
+	public static function dataRegistrasiTelemedicine($params) {
+        $price = 0;
+		$permintaan = DB::table('permintaan_telemedicine')->where('id_permintaan_telemedicine', $params)->first();
+		$biayaTotal = $permintaan->biaya_layanan;
+        $layanan = array();
+        $layanan[] = (object)[
+            'nama_layanan' => 'telemedicine',
+            'harga' => $permintaan->biaya_layanan
+        ];
+		$payment = DB::table('payment_permintaan')->where('jenis_layanan', 'telemedicine')->where('permintaan_id',$params)->first();
+		return [
+			'permintaan' => $permintaan,
+            'layanan' => $layanan,
+			'subtotal' => $biayaTotal,
+			'payment'  => $payment,
+		];
+	}
+    # Callback eresep telemedicine
+	public static function dataEresepTelemedicine($params) {
+        $price = 0;
+		$permintaan = DB::table('permintaan_telemedicine')->where('id_permintaan_telemedicine', $params)->first();
+        $resep = DB::table('resep_obat')->where('jenis_layanan', 'telemedicine')->where('permintaan_id', $params)->first();
+        $payment = DB::table('payment_permintaan')->where('jenis_layanan', 'eresep_telemedicine')->where('permintaan_id',$params)->first();
+
+        $resepDetail = DB::table('resep_obat_detail')->where('resep_obat_id', $resep->id_resep_obat);
+        $resepDetail->when(($payment->status!='SETTLED'&&$payment->status!='PAID'), fn($q) =>
+            $q->selectRaw('(CASE WHEN (LENGTH(nama_obat)>=3) THEN CONCAT(SUBSTRING(nama_obat, 1, 2) , "****") WHEN (LENGTH(nama_obat)=2) THEN CONCAT(nama_obat, "****") ELSE CONCAT(nama_obat, "*****") END) AS nama_obat,resep_obat_id,kode_obat,qty,signa,harga')
+        );
+
+        $resepDetail->when(($payment->status=='SETTLED'||$payment->status=='PAID'), fn($q) =>
+            $q->selectRaw('nama_obat,resep_obat_id,kode_obat,qty,signa,harga')
+        );
+
+        $resepDetail = $resepDetail->get();
+        if($resep->diantar == "ya") {
+            $biayaTotal = (float)$payment->nominal + $payment->ongkos_kirim;
+        } else {
+            $biayaTotal = $payment->nominal;
+        }
+		return [
+			'permintaan' => $permintaan,
+            'resep' => $resep,
+            'resepDetail' => $resepDetail,
+			'subtotal' => $biayaTotal,
+			'payment'  => $payment
 		];
 	}
 	# Callback pendaftaran mcu
@@ -214,8 +299,7 @@ class Helpers{
 		];
 	}
 	# Generate no antrian
-	public static function generateNoantrian(Request $request)
-	{
+	public static function generateNoantrian(Request $request) {
 		$prefix = 'M';
 		$length = strlen($prefix)+3;
 		$antri = DB::table('permintaan_mcu')->select('no_antrian')
@@ -230,22 +314,6 @@ class Helpers{
 		$angkaAntri       = sprintf("%03d",$num+1);
 		return $nextAntri = "$prefix".$angkaAntri;
 	}
-	# Menghitung jarak dari rsud wahidin ke lokasi pasien
-	public static function calculateDistance($latitude, $longitude, $latitude2=-7.4906403,$longitude2=112.4178198) {
-        $lat1 = (int)$latitude2;
-        $lon1 = (int)$longitude2;
-        $lat2 = (int)$latitude;
-        $lon2 = (int)$longitude;
-
-        $theta = $lon1 - $lon2;
-        $miles = (sin(deg2rad($lat1))) * sin(deg2rad($lat2)) + (cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta)));
-        $miles = acos($miles);
-        $miles = rad2deg($miles);
-        $rMiles = $miles * 60 * 1.1515;
-        $kilometers = $rMiles * 1.609344;
-        $return = intval($kilometers);
-        return $return;
-    }
 	# Check Regist Pasien
 	public static function checkRegistPasien($checkBy, $param) {
 		if ($checkBy=='nik') {
@@ -267,7 +335,7 @@ class Helpers{
 	}
 	public static function resApi($msg='Terjadi kesalahan sistem',$code=500,$data=[]){ # Template rest api
 		return response()->json([
-			'metadata' => [
+			'metaData' => [
 				'message' => $msg,
 				'code'    => $code,
 			],

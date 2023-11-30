@@ -22,8 +22,8 @@ class CreateUsersTable extends Migration
             $table->string('level');
             $table->string('password');
             $table->string('lihat_password');
-            // $table->string('nik')->nullable();
             $table->string('telepon');
+            $table->string('foto');
             $table->rememberToken();
             $table->timestamps();
         });

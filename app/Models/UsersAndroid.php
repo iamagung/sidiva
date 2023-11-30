@@ -16,4 +16,8 @@ class UsersAndroid extends Model
     {
         return $this->hasMany(PermintaanTelemedicine::class, 'nik', 'nik');
     }
+
+    public function user() {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
 }

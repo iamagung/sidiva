@@ -180,6 +180,20 @@
         });
     }
 
+    function detailEresep(id) {
+        $.post("{{route('formEresepTelemedicine')}}",{id:id})
+        .done(function(data){
+            if(data.status == "success"){
+                $("#modalForm").html(data.content);
+            } else {
+                Swal.fire('Maaf!', data.message, 'error');
+            }
+		})
+        .fail(() => {
+            Swal.fire('Maaf!', 'Terjadi Kesalahan!', 'warning');
+        });
+    }
+
     function terima(id) {
         Swal.fire({
             title: 'Apakah Kamu Yakin?',
@@ -240,7 +254,7 @@
     //         if (data.status == 'success') {
     //             $('.modal-dialog').html(data.content);
     //         } else {
-    //             Swal.fire('Maaf',data.message,"warning");    
+    //             Swal.fire('Maaf',data.message,"warning");
     //         }
     //     }).fail(function() {
     //         Swal.fire('Oops!!',"Terjadi kesalahan sistem!","error");

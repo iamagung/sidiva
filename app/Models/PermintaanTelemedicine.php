@@ -35,7 +35,7 @@ class PermintaanTelemedicine extends Model
     }
 
     public function rating() {
-        return $this->hasOne('App\Models\Rating', 'permintaan_id', 'id_permintaan_telemedicine');
+        return $this->hasOne('App\Models\Rating', 'permintaan_id', 'id_permintaan_telemedicine')->where('rating.jenis_layanan', 'telemedicine');
     }
 
     public function tmPoli()
@@ -48,6 +48,10 @@ class PermintaanTelemedicine extends Model
         return $this->belongsTo('App\Models\DBRANAP\Users', 'tenaga_medis_id', 'id');
     }
 
+    public function nakes_perawat() {
+        return $this->belongsTo('App\Models\DBRANAP\Users', 'perawat_id', 'id');
+    }
+
     public function rekap_medik() {
         return $this->hasOne(RekapMedik::class, 'permintaan_id', 'id_permintaan_telemedicine')->where('rekap_medik.jenis_layanan', 'telemedicine');
     }
@@ -58,6 +62,10 @@ class PermintaanTelemedicine extends Model
 
 	public function payment_permintaan() {
 		return $this->hasOne(PaymentPermintaan::class, 'permintaan_id', 'id_permintaan_telemedicine')->where('payment_permintaan.jenis_layanan', 'telemedicine');
+	}
+
+	public function payment_permintaan_eresep() {
+		return $this->hasOne(PaymentPermintaan::class, 'permintaan_id', 'id_permintaan_telemedicine')->where('payment_permintaan.jenis_layanan', 'eresep_telemedicine');
 	}
 
     public function video_conference()

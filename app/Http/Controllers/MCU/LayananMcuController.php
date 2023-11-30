@@ -10,36 +10,34 @@ use DataTables, Validator, DB, Auth;
 
 class LayananMcuController extends Controller
 {
-    function __construct()
-	{
+    function __construct() {
 		$this->title = 'Layanan MCU';
 	}
 
-    public function main()
-    {
+    public function main() {
         if(request()->ajax()){
             $data = LayananMcu::orderBy('id_layanan','ASC')->get();
 			return DataTables::of($data)
 				->addIndexColumn()
                 ->addColumn('modifyNama', function($row){
 					$data = $row->nama_layanan;
-					return $txt = "<p>$data</p>";
+					return $txt = "<text>$data</text>";
 				})
                 ->addColumn('modifyDesc', function($row){
 					$data = $row->deskripsi ? (strlen($row->deskripsi) > 10 ? substr($row->deskripsi,0,30).'...' : $row->deskripsi) : '-';
-					return $txt = "<p>$data</p>";
+					return $txt = "<text>$data</text>";
 				})
                 ->addColumn('modifyKategori', function($row){
-					$data = "MCU - ".$row->kategori_layanan;
-					return $txt = "<p>$data</p>";
+					$data = "MCU - ".strtoupper($row->kategori_layanan);
+					return $txt = "<text>$data</text>";
 				})
                 ->addColumn('formatHarga', function($row){
 					$data = "Rp.".number_format($row->harga,0,',','.');
-                    return $txt = "<p>$data</p>";
+                    return $txt = "<text>$data</text>";
 				})
                 ->addColumn('modifyJenis', function($row){
 					$data = $row->jenis_layanan;
-					return $txt = "<p>$data</p>";
+					return $txt = "<text>$data</text>";
 				})
 				->addColumn('actions', function($row){
 					$txt = "
@@ -55,8 +53,7 @@ class LayananMcuController extends Controller
         return view('admin.mcu.layanan.main', $data);
     }
 
-    public function form(Request $request)
-    {
+    public function form(Request $request) {
         if (empty($request->id)) {
             $data['layanan'] = '';
             $data['title'] = "Tambah ".$this->title;
@@ -76,6 +73,7 @@ class LayananMcuController extends Controller
             'harga' => 'required',
             'nama_layanan' => 'required',
             'kategori_layanan' => 'required',
+            'total_kuota_layanan' => 'required'
         );
         $messages = array(
             'required'  => 'Kolom Harus Diisi',
@@ -96,6 +94,9 @@ class LayananMcuController extends Controller
                 $data->deskripsi        = $request->deskripsi;
                 $data->jenis_layanan    = $request->jenis_layanan;
                 $data->maksimal_peserta = ($request->maksimal_peserta)?$request->maksimal_peserta:null;
+                $data->kuota_layanan    = $request->total_kuota_layanan;
+                // $data->max_jarak        = ($request->total_max_jarak)?$request->total_max_jarak:null;
+                // $data->biaya_per_km     = ($request->biaya_per_km)?preg_replace("/[^0-9]/", "", $request->biaya_per_km):null;
                 $data->save();
 
                 if ($data) {

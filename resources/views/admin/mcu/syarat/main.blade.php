@@ -6,7 +6,7 @@
     <!-- judul dan link -->
     <div class="row page-breadcrumb d-none d-sm-flex align-items-center mb-3">
         <div class="pe-3 col-md-10">
-            <span style="font-weight: bold;">{{$title}}<span>
+            <span style="font-weight: bold;">{{$title}} MCU<span>
         </div>
         <div class="pe-3 col-md-2 justify-content-end">
             <span style="color: #787878;">Medical Check Up<span>
@@ -15,9 +15,6 @@
 
     <!-- main content -->
     <div class="card main-layer">
-        <div class="card-header">
-            <h5>{{$title}} MCU</h5>
-        </div>
         <div class="card-body">
             <form id="commentForm">
                 <div class="row mb-3">

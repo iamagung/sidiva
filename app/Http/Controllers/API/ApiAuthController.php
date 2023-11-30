@@ -14,7 +14,7 @@ use Validator, DB, Auth, Hash, Log;
 class ApiAuthController extends Controller
 {
     private static $file = 'ApiAuthController.php';
-    
+
     public function register(Request $request) {
         $validate = Validator::make($request->all(),[
             'nik' => 'required',
@@ -35,19 +35,19 @@ class ApiAuthController extends Controller
         ]);
         if (!$validate->fails()) {
             if (strlen($request->nik)!=16) { #Pengecekan NIK 16 digit
-                return Help::resApi('NIK tidak sesuai standar 16 digit.',201);
+                return Help::resApi('NIK tidak sesuai standar 16 digit.',400);
             }
             if (Help::checkRegistPasien('nik',$request->nik)) { #Pengecekan berdasarkan NIK
-                return Help::resApi('NIK Sudah Pernah Didaftarkan.',201);
+                return Help::resApi('NIK Sudah Pernah Didaftarkan.',400);
             }
             if (Help::checkRegistPasien('telepon',$request->telepon)) { #Pengecekan berdasarkan No.Telepon
-                return Help::resApi('No.Telepon Sudah Pernah Didaftarkan.',201);
+                return Help::resApi('No.Telepon Sudah Pernah Didaftarkan.',400);
             }
             try {
                 DB::beginTransaction();
                 $check_nik = $this->checkNIK($request->nik);
                 if ($check_nik > 0) {
-                    return Help::resApi('NIK sudah terdaftar.',500);
+                    return Help::resApi('NIK sudah terdaftar.',400);
                 }
                 $data = new User; #Save to users
                 $data->name             = strtoupper($request->nama);
@@ -59,7 +59,7 @@ class ApiAuthController extends Controller
                 $data->save();
                 if (!$data) {
                     DB::rollback();
-                    return Help::resApi('Registrasi gagal.',500);
+                    return Help::resApi('Registrasi gagal.',400);
                 }
                 $data2 = new UsersAndroid; #Save to users android
                 $data2->user_id         = $data->id;
@@ -71,7 +71,7 @@ class ApiAuthController extends Controller
                 $data2->save();
                 if (!$data2) {
                     DB::rollback();
-                    return Help::resApi('Gagal menyimpan ke users android.',500);
+                    return Help::resApi('Gagal menyimpan ke users android.',400);
                 }
                 $token = $data->createToken('auth_token')->plainTextToken;
                 DB::commit();
@@ -91,7 +91,7 @@ class ApiAuthController extends Controller
                 return Help::resApi('Terjadi kesalahan sistem',500);
             }
         }else{
-            return Help::resApi($validate->errors()->all()[0],500);
+            return Help::resApi($validate->errors()->all()[0],400);
         }
     }
     public function login(Request $request)
@@ -100,9 +100,11 @@ class ApiAuthController extends Controller
             return Help::resApi('Unauthorized.',401);
         }
         try {
-            $user = User::where('username', $request->username)->first();
+            $user = User::where('username', $request->username)
+                ->whereIn('level',['pasien','dokter','perawat'])
+                ->first();
             if (!$user) {
-                return Help::resApi('User not found.',500);
+                return Help::resApi('User not found.',400);
             }
             $token = $user->createToken('auth_token')->plainTextToken;
             return response()->json([
@@ -115,7 +117,6 @@ class ApiAuthController extends Controller
                 'response' => $user,
             ]);
         } catch (\Throwable $e) {
-            # Index $log [0{title} , 1{status(true or false)} , 2{errMsg} , 3{errLine} , 4{data}]
             $log = ['ERROR REGISTER PASIEN ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::custom_logging($log);
             return Help::resApi('Terjadi kesalahan sistem',500);
@@ -139,7 +140,7 @@ class ApiAuthController extends Controller
             $request->tgljam = date('Y-m-d H:i:s');
             $insert_auth = Authentication::insert($request);
             if(!$insert_auth){
-                return Help::resApi('Gagal menyimpan authentication.',500);
+                return Help::resApi('Gagal menyimpan authentication.',400);
 			}
             $request->request->add([ # For Helpers::messageSenderOtp()
                 'otp' => $insert_auth->otp,
@@ -159,7 +160,7 @@ class ApiAuthController extends Controller
         } catch (\Throwable $e) {
             $log = ['ERROR SEND OTP ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
             Help::logging($log);
-            return Help::resApi('Terjadi kesalahan sistem',500);
+            return Help::resApi('Terjadi kesalahan sistem',400);
         }
     }
     public function verifyOtp(Request $request){
@@ -167,8 +168,8 @@ class ApiAuthController extends Controller
 			$cek = Authentication::check_otp($request);
 			if ($cek) {
 				if (date('Y-m-d H:i:s') > date('Y-m-d H:i:s', strtotime($cek->tanggal_waktu.'+ 2 hours')))
-                    return Help::custom_response(410, "error", "OTP Expired!", null);
-                    
+                    return Help::custom_response(400, "error", "OTP Expired!", null);
+
                 Authentication::update_expired($request);
 				$user = User::leftJoin('users_android as ua','ua.user_id','users.id')
 					->where('users.telepon', '=', $cek->wa)

@@ -31,7 +31,7 @@
 <!-- judul dan link -->
 <div class="row page-breadcrumb d-none d-sm-flex align-items-center mb-3">
     <div class="pe-3 col-md-10">
-        <span style="font-weight: bold;">{{$title}}<span>
+        <span style="font-weight: bold;">{{$title}} MCU<span>
     </div>
     <div class="pe-3 col-md-2 justify-content-end">
         <span style="color: #787878;">Medical Check Up<span>
@@ -40,13 +40,17 @@
 
 <!-- main content -->
 <div class="card main-layer">
-    <div class="card-header">
-        <h5>{{ $title }} Homecare
-            <button type="button" class="btn btn-success btn-sm float-end" id="lihat">LIHAT JADWAL</button>
-        </h5>
-    </div>
     <div class="card-body">
         <form id="dayForm">
+            <div class="row">
+                <div class="col-md-9"></div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-success btn-sm float-end" id="lihat">
+                        LIHAT JADWAL
+                    </button>
+                </div>
+            </div>
+            <hr>
             <div class="row">
                 <div class="accordion" id="accordionExample1">
                     <div class="accordion-item">
@@ -224,6 +228,58 @@
                         </div>
                     </div>
                 </div>
+                <div class="accordion" id="accordionExample2">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo"
+                                aria-expanded="true" aria-controls="collapseTwo" style="background: #8F49A9; color: white; font-weight: bold">
+                                PENGATURAN PELAYANAN
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse show collapse" aria-labelledby="headingTwo"
+                            data-bs-parent="#accordionExample2">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="row mb-3">
+                                            <div class="col-md-4">
+                                                <label for="">Dilayani Dirumah Pasien, Max Jarak (KM)</label>
+                                                <input type="text" name="jarak_maksimal" id="jarak_maksimal" class="form-control" autocomplete="off"
+                                                placeholder="00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion" id="accordionExample3">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree"
+                                aria-expanded="true" aria-controls="collapseThree" style="background: #8F49A9; color: white; font-weight: bold">
+                                PENGATURAN BIAYA TRANSPORTASI
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse show collapse" aria-labelledby="headingThree"
+                            data-bs-parent="#accordionExample3">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <label for="">Biaya Transportasi (Per- 1 KM)</label>
+                                                    <input type="text" name="biaya_per_km" id="biaya_per_km" class="form-control" autocomplete="off"
+                                                    onkeyup="ubahFormat(this)" placeholder="Rp.xx.xxx">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="accordion" id="accordionExample4">
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingFour">
@@ -292,6 +348,8 @@
         e.preventDefault();
 
         var data = new FormData($("#dayForm")[0]);
+        var max_jarak = $('#jarak_maksimal').val();
+        var biaya = $('#biaya_per_km').val();
         var deskripsi = CKEDITOR.instances.editor1.getData();
             data.append('deskripsi',deskripsi);
 
@@ -307,6 +365,10 @@
             Swal.fire({title: 'Peringatan!',text: 'Jam buka atau tutup hari Jumat wajib diisi',icon: 'warning',timer: 2000,buttons: false})
         } else if ($("#6status").is(":checked") && ($('#buka6').val() == '' || $('#tutup6').val() == '')) {
             Swal.fire({title: 'Peringatan!',text: 'Jam buka atau tutup hari Sabtu wajib diisi',icon: 'warning',timer: 2000,buttons: false})
+        } else if (!max_jarak) {
+            Swal.fire({title: 'Peringatan!',text: 'Max Jarak wajib diisi',icon: 'warning',timer: 2000,buttons: false})
+        } else if (!biaya) {
+            Swal.fire({title: 'Peringatan!',text: 'Biaya Transportasi wajib diisi',icon: 'warning',timer: 2000,buttons: false})
         } else if (!deskripsi) {
             Swal.fire({title: 'Peringatan!',text: 'Informasi pembatalan wajib diisi',icon: 'warning',timer: 2000,buttons: false})
         } else {
@@ -351,6 +413,8 @@
             var buka7 = result.jadwal.mingguBuka;
             var tutup7 = result.jadwal.mingguTutup;
             var desk = result.jadwal.informasi_pembatalan;
+            var max = result.jadwal.jarak_maksimal;
+            var biaya = result.jadwal.biaya_per_km;
             if (result.code == 200) {
                 if (buka1 != null && tutup1 != null) {
                     $("#1status").prop("checked", true);
@@ -401,6 +465,8 @@
                     $('#buka7').val(buka7);
                     $('#tutup7').val(tutup7);
                 }
+                $('#biaya_per_km').val(biaya);
+                $('#jarak_maksimal').val(max);
                 CKEDITOR.instances.editor1.setData(desk);
                 Swal.fire({
                     title: 'Berhasil',
@@ -420,6 +486,28 @@
             }
         });
     });
+
+    function ubahFormat(val) {
+        $('#biaya_per_km').val(formatRupiah(val.value, 'Rp. '))
+    }
+
+    /* Fungsi formatRupiah */
+    function formatRupiah(angka, prefix) {
+        var number_string = angka.toString().replace(/[^,\d]/g, "");
+        split = number_string.split(",");
+        sisa = split[0].length % 3;
+        rupiah = split[0].substr(0, sisa);
+        ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+        // tambahkan titik jika yang di input sudah menjadi angka ribuan
+        if (ribuan) {
+            separator = sisa ? "." : "";
+            rupiah += separator + ribuan.join(".");
+        }
+
+        rupiah = split[1] != undefined ? rupiah + "," + split[1] : rupiah;
+        return prefix == undefined ? rupiah : rupiah ? "Rp. " + rupiah : "";
+    }
 
     $('#refresh').click(function (e) {
         e.preventDefault();

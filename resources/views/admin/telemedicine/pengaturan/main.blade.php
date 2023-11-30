@@ -248,6 +248,32 @@
 								</div>
 							</div>
 						</div>
+                        <div class="accordion" id="accordionExample5">
+							<div class="accordion-item">
+								<h2 class="accordion-header" id="headingFive">
+									<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive"
+										aria-expanded="true" aria-controls="collapseFive" style="background: #8F49A9; color: white; font-weight: bold">
+										TARIF TELEMEDICINE
+									</button>
+								</h2>
+								<div id="collapseFive" class="accordion-collapse show collapse" aria-labelledby="headingFive"
+									data-bs-parent="#accordionExample5">
+									<div class="accordion-body">
+										<div class="row">
+                                            <div class="col-md-12">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-12">
+                                                        <label for="">Tarif / Harga *</label>
+                                                        <input type="text" name="tarif" id="tarif" class="form-control" autocomplete="off"
+                                                            onkeyup="ubahFormatTarif(this)" placeholder="Rp.xx.xxx">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+									</div>
+								</div>
+							</div>
+						</div>
                         <div class="accordion" id="accordionExample2">
 							<div class="accordion-item">
 								<h2 class="accordion-header" id="headingTwo">
@@ -482,7 +508,7 @@
 				var tutup7 = result.jadwal.mingguTutup;
 				var biaya = result.jadwal.biaya_per_km;
 				var jarak = result.jadwal.jarak_maksimal;
-				// var batas = result.jadwal.batas_waktu;
+				var tarif = result.jadwal.tarif;
 				var desk = result.jadwal.informasi_pembatalan;
 				if (result.code == 200) {
 					if (buka1 != null && tutup1 != null) {
@@ -536,7 +562,7 @@
 					}
 					$('#biaya_per_km').val(formatRupiah(biaya, 'Rp. '));
 					$('#jarak_maksimal').val(jarak);
-					// $('#batas_waktu').val(batas);
+					$('#tarif').val(formatRupiah(tarif, 'Rp. '));
                     CKEDITOR.instances.editor1.setData(desk);
 					Swal.fire({
 						title: 'Berhasil',
@@ -559,6 +585,10 @@
 
 		function ubahFormat(val) {
 			$('#biaya_per_km').val(formatRupiah(val.value, 'Rp. '))
+		}
+
+        function ubahFormatTarif(val) {
+			$('#tarif').val(formatRupiah(val.value, 'Rp. '))
 		}
 
 		/* Fungsi formatRupiah */

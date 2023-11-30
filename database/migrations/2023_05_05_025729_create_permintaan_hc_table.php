@@ -35,7 +35,7 @@ class CreatePermintaanHcTable extends Migration
             $table->string('jenis_pembayaran')->nullable();
             $table->integer('biaya_layanan')->nullable();
             $table->decimal('biaya_ke_lokasi',12,2)->nullable();
-            $table->string('status_pasien')->nullable()->comment('belum, menunggu, proses, ditolak, batal, selesai');
+            $table->string('status_pasien')->nullable()->comment('belum, menunggu, proses, tolak, batal, selesai');
             $table->string('status_pembayaran')->nullable();
             $table->string('tenaga_medis_id')->nullable();
             $table->timestamps();

@@ -18,6 +18,7 @@ class CreateResepObatTable extends Migration
             $table->integer('permintaan_id');
             $table->string('no_resep', 25);
             $table->string('jenis_layanan', 25);
+            $table->string('diantar', 25)->nullable();
             $table->timestamp('tgl_resep');
             $table->timestamp('berlaku_sampai');
             $table->timestamps();

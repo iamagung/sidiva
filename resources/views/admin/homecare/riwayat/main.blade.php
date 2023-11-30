@@ -14,11 +14,8 @@
 
     <!-- main content -->
     <div class="card main-layer">
-        <div class="card-header">
-            <h5>Riwayat MCU</h5>
-        </div>
         <div class="card-body">
-            <div class="row" style="margin-top: 2rem">
+            <div class="row">
                 <div class="col-md-2" style="margin-top: 5px;">
                     <span class="float-left">Pilih Tanggal</span>
                 </div>
@@ -32,7 +29,8 @@
                     <button type="button" class="btn btn-success btn-sm float-end" onclick="exportExcel()"><i class='bx bxs-file-export'></i> Export To Excel</button>
                 </div>
             </div>
-            <div class="row" style="margin-top: 2rem">
+            <hr>
+            <div class="row">
                 <div class="table-responsive">
                     <table id="datatabel" class="table table-striped table-bordered" width="100%">
                         <thead>

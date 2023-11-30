@@ -19,6 +19,7 @@ class CreatePaymentPermintaanTable extends Migration
             $table->string('invoice_id', 255)->nullable();
             $table->text('nomor_referensi')->nullable();
             $table->decimal('nominal', 12, 2);
+            $table->decimal('ongkos_kirim', 12, 2)->default(0);
             $table->dateTime('tgl_lunas')->nullable();
             $table->dateTime('tgl_expired');
             $table->string('jenis_layanan', 25);

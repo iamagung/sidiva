@@ -46,4 +46,18 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Get the tenaga_medis_telemedicine that owns the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function tenaga_medis_telemedicine()
+    {
+        return $this->belongsTo(TenagaMedisTelemedicine::class, 'id', 'nakes_id');
+    }
+
+    public function users_android() {
+        return $this->hasOne(UsersAndroid::class, 'user_id', 'id');
+    }
 }

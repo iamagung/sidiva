@@ -20,6 +20,11 @@ class RekamMedisLanjutan extends Model
         return $this->belongsTo(PermintaanTelemedicine::class, 'permintaan_id', 'id_permintaan_telemedicine');
     }
 
+    public function permintaan_hc()
+    {
+        return $this->belongsTo(PermintaanHC::class, 'permintaan_id', 'id_permintaan_hc');
+    }
+
     public function perawat()
     {
         return $this->hasOne(TenagaMedisTelemedicine::class, 'nakes_id', 'perawat_id');

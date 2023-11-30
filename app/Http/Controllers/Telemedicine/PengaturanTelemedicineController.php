@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Telemedicine;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PengaturanTelemedicine;
+use App\Models\Activity;
+use Illuminate\Support\Facades\Auth;
 
 class PengaturanTelemedicineController extends Controller
 {
@@ -35,6 +37,9 @@ class PengaturanTelemedicineController extends Controller
             return ['code' => 500, 'status' => 'warning', 'message' => 'Biaya Per KM Wajib Diisi'];
         }
         if ($request->jarak_maksimal == null) {
+            return ['code' => 500, 'status' => 'warning', 'message' => 'Jarak Maksimal Wajib Diisi'];
+        }
+        if ($request->tarif == null) {
             return ['code' => 500, 'status' => 'warning', 'message' => 'Jarak Maksimal Wajib Diisi'];
         }
         // return $request;
@@ -73,11 +78,12 @@ class PengaturanTelemedicineController extends Controller
         }
         $data->biaya_per_km     = preg_replace("/[^0-9]/", "", $request->biaya_per_km);
         $data->jarak_maksimal   = $request->jarak_maksimal;
-        // $data->batas_waktu      = $request->batas_waktu;
+        $data->tarif      = preg_replace("/[^0-9]/", "", $request->tarif);
         $data->informasi_pembatalan = $request->deskripsi;
         $data->save();
 
         if ($data) {
+            $activity = Activity::store(Auth::user()->id,'Ubah pengaturan telemedicine');
             return ['code' => 200, 'status' => 'success', 'message' => 'Data Berhasil Disimpan'];
         } else {
             return ['code' => 201, 'status' => 'error', 'message' => 'Data Gagal Disimpan'];

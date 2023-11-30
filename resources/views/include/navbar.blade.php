@@ -27,7 +27,7 @@
 										<i class='bx bx-search'></i>
 									</a>
 								</li>
-								
+
 								<li class="nav-item dropdown dropdown-large">
 									 <a class="nav-link" onclick="alert('Maintenance')" href="#">
 									 {{-- <a class="nav-link dropdown-toggle dropdown-toggle-nocaret position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> <span class="alert-count">7</span> --}}
@@ -380,20 +380,20 @@
 							<div class="menu-title">Pengguna</div>
 						</a>
 					</li>
-					<li>
-						<a href="{{ Route('mainLaporanLayanan')}}">
+                    @include('include.navbar.laporan')
+                    <li>
+						<a href="{{ Route('mainArtikelKesehatan')}}">
 							<div class="parent-icon text-white">
-								<i class='bx bxs-report'></i>
+                                <i class='bx bxs-book-content'></i>
 							</div>
-							<div class="menu-title">Lap Layanan</div>
+							<div class="menu-title">Artikel Kesehatan</div>
 						</a>
 					</li>
-					<li>
-						<a href="{{ Route('mainLaporanKeuangan')}}">
-							<div class="parent-icon text-white">
-								<i class='bx bxs-report'></i>
+                    <li>
+						<a href="{{ Route('mainActivity')}}">
+							<div class="parent-icon text-white"><i class='bx bx-stats'></i></i>
 							</div>
-							<div class="menu-title">Lap Keuangan</div>
+							<div class="menu-title">Log Activity</div>
 						</a>
 					</li>
 				@elseif(Auth::User()->level=='adminmcu') <!-- Admin MCU -->

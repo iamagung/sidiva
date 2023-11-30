@@ -11,7 +11,7 @@ class MsItem extends Model
     use HasFactory;
     public function __construct() {
         // $this->setConnection(Config::get('database.connections.dbsirama_admin'))
-        $this->setConnection('dbsirama_admin');
+        // $this->setConnection('dbsirama_admin');
         // $this->connection='dbsirama_admin';
         $this->table = Config::get('database.connections.dbsirama_admin.database').'.admin.ms_item';
         // $db = Config::get('database.connections.dbsirama_admin.database');

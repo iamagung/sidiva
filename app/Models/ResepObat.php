@@ -16,9 +16,14 @@ class ResepObat extends Model
         $this->table = Config::get('database.connections.mysql.database').'.resep_obat';
     }
 
-    public function permintaan_telemedicine(): BelongsTo
+    public function permintaan_telemedicine()
     {
-        return $this->belongsTo(PermintaanTelemedicine::class, 'permintaan_id', 'id_permintaan_telemedicine');
+        return $this->belongsTo(PermintaanTelemedicine::class, 'permintaan_id', 'id_permintaan_telemedicine')->where('jenis_layanan', 'telemedicine');
+    }
+
+    public function permintaan_hc()
+    {
+        return $this->belongsTo(PermintaanTelemedicine::class, 'permintaan_id', 'id_permintaan_telemedicine')->where('jenis_layanan', 'homecare');
     }
 
     public function resep_obat_detail()

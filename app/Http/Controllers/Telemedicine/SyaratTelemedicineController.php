@@ -39,7 +39,8 @@ class SyaratTelemedicineController extends Controller
 		$syarat->save();
 
 		if ($syarat) {
-			$data = ['code' => 200, 'status' => 'success', 'message' => 'Berhasil Menyimpan Data'];
+            $activity = Activity::store(Auth::user()->id,'Menjadwalkan telemedicine');
+            $data = ['code' => 200, 'status' => 'success', 'message' => 'Berhasil Menyimpan Data'];
 		}else{
 			$data = ['code' => 201, 'status' => 'success', 'message' => 'Gagal Menyimpan Data'];
 		}

@@ -18,17 +18,12 @@
 
     <!-- main content -->
     <div class="card main-layer">
-        <div class="card-header">
-            <h5>Permintaan Home Care</h5>
-        </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-4"></div>
-                <div class="col-md-2"></div>
-                <div class="col-md-2">
-                    <label>Status</label>
-                    <select name="status" id="status" class="form-control">
-                        <option value="">-Pilih-</option>
+                <div class="col-md-6"></div>
+                <div class="col-md-3">
+                    <label>Pilih Status</label>
+                    <select name="pilih_status" id="pilih_status" class="form-control single-select">
                         <option value="all">Semua</option>
                         <option value="belum">Belum</option>
                         <option value="proses">Proses</option>
@@ -37,12 +32,13 @@
                         <option value="selesai">Selesai</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label>Tanggal Homecare</label>
                     <input type="date" id="tanggal" class="form-control">
                 </div>
             </div>
-            <div class="row" style="margin-top: 2rem">
+            <hr>
+            <div class="row">
                 <div class="table-responsive">
                     <table id="datatabel" class="table table-striped table-bordered" width="100%">
                         <thead>
@@ -87,17 +83,17 @@
 
         var today = year + "-" + month + "-" + day ;
         $("#tanggal").attr("value", today);
-        var status = $('#status').val();
-        loadTable(today,status);
-        filterByDate();
-        filterByStatus();
+        loadTable(today,$('#pilih_status').val());
+        filterByTwo();
 	});
-
+    $("#pilih_status").select2({
+        theme: 'bootstrap-5'
+    });
     function loadTable(tanggal=null, status=null){
         var table = $('#datatabel').DataTable({
             scrollX: true,
             searching: true,
-            ordering: false,
+            ordering: true,
             paging: true,
             processing: true,
             serverSide: true,
@@ -132,18 +128,16 @@
         })
     }
 
-    function filterByDate() {
+    function filterByTwo() {
         $("#tanggal").change(function (e) {
             e.preventDefault();
             $('#datatabel').DataTable().destroy();
-            loadTable($("#tanggal").val(), $("#status").val());
+            loadTable($(this).val(), $("#pilih_status").val());
         });
-    }
-    function filterByStatus() {
-        $("#status").change(function (e) {
+        $("#pilih_status").change(function (e) {
             e.preventDefault();
             $('#datatabel').DataTable().destroy();
-            loadTable($("#tanggal").val(), $("#status").val());
+            loadTable($("#tanggal").val(), $(this).val());
         });
     }
     function pilih(id) {
@@ -152,20 +146,20 @@
             if (data.status == 'success') {
                 $('.modal-dialog').html(data.content);
             } else {
-                Swal.fire('Maaf',data.message,"warning");    
+                Swal.fire('Maaf',data.message,"warning");
             }
         }).fail(function() {
             Swal.fire('Oops!!',"Terjadi kesalahan sistem!","error");
         });
     }
-    
+
     function detail(id) {
         $.post('{{ route("formPermintaanHC") }}',{id:id,view:1})
         .done(function(data) {
             if (data.status == 'success') {
                 $('.modal-dialog').html(data.content);
             } else {
-                Swal.fire('Maaf',data.message,"warning");    
+                Swal.fire('Maaf',data.message,"warning");
             }
         }).fail(function() {
             Swal.fire('Oops!!',"Terjadi kesalahan sistem!","error");

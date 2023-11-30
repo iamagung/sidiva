@@ -40,7 +40,6 @@
                                 <td>Nama Tenaga Kesehatan</td>
                                 <td>Jenis Nakes</td>
                                 <td>Poli Layanan</td>
-                                <td>Tarif</td>
                                 <td>Jadwal</td>
                                 <td>No. Telepon</td>
                                 <td>Status</td>
@@ -93,7 +92,6 @@
                 { data: "nama_nakes", name: "nama_nakes"},
                 { data: "jenis_nakes", name: "jenis_nakes"},
                 { data: "poli_layanan", name: "poli_layanan"},
-                { data: "tarif", name: "tarif"},
                 { data: "jadwal", name: "jadwal"},
                 { data: "no_telepon", name: "no_telepon"},
                 { data: "status", name: "status"},
@@ -150,6 +148,15 @@
                 })
             }
         })
+    }
+    function formJadwal(id) {
+        $.post("{{route('formJadwalTenagaMedisTelemedicine')}}",{id:id})
+        .done(function(data){
+			$("#modalForm").html(data.content);
+		})
+        .fail(() => {
+            Swal.fire('Maaf!', 'Terjadi Kesalahan!', 'warning');
+        });
     }
 
     function hideForm(){

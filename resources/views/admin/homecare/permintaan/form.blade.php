@@ -8,7 +8,7 @@
                 <input type="hidden" name="id" id="id" value="{{ !empty($permintaan->id_permintaan_hc) ? $permintaan->id_permintaan_hc : ''}}">
                 <div class="row mb-3">
                     <label>Layanan Home Care</label>
-                    <select name="layanan_id" id="layanan_id" class="form-control select2" disabled>
+                    <select name="layanan_id" id="layanan_id" class="form-control single-select" disabled>
                         <option value="">-Pilih-</option>
                         @if (count($getLayanan) > 0)
                             @foreach ($getLayanan as $key => $l)
@@ -58,8 +58,9 @@
 <script type="text/javascript">
     $(document).ready(function () {
         // Large using Select2 properties
-        $(".select2").select2({
-            theme: 'bootstrap-5'
+        $(".single-select").select2({
+            theme: 'bootstrap-5',
+            
         });
     });
 

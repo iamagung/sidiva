@@ -5,7 +5,6 @@ namespace App\Http\Controllers\HC;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PermintaanHC;
-use App\Models\PaketHC;
 use App\Models\LayananHC;
 use App\Models\LayananPermintaanHc;
 use App\Models\TenagaMedisHomecare;
@@ -16,28 +15,30 @@ use DataTables, Validator, DB, Auth;
 class PermintaanHCController extends Controller
 {
     function __construct() {
-		$this->title = 'Permintaan Baru';
+		$this->title = 'Permintaan Homecare';
 	}
 
     public function main(Request $request) {
         if(request()->ajax()){
+            // return $request;
             if (!empty($request->tanggal) && !empty($request->status)) {
                 if ($request->status=='all') {
                     $data = PermintaanHC::where('tanggal_kunjungan', $request->tanggal)
-                    ->whereIn('status_pasien', ['belum','proses','menunggu','ditolak','batal','selesai'])
+                    ->whereIn('status_pasien', ['belum','proses','menunggu','tolak','batal','selesai'])
+                    // ->with('resep_obat')
                     ->orderBy('created_at','ASC')->get();
                 } else {
                     $data = PermintaanHC::where('tanggal_kunjungan', $request->tanggal)
                     ->where('status_pasien', $request->status)
+                    // ->with('resep_obat')
                     ->orderBy('created_at','ASC')->get();
                 }
             } else {
-                $data = PermintaanHC::whereIn('status_pasien', ['belum','proses','menunggu'])
-                ->where('tanggal_kunjungan', $request->tanggal)
+                $data = PermintaanHC::where('tanggal_kunjungan', $request->tanggal)
+                // ->with('resep_obat')
                 ->orderBy('created_at','ASC')->get();
             }
             foreach ($data as $k => $v) {
-                // return $v;
                 $layanan = LayananPermintaanHc::where('permintaan_id', $v->id_permintaan_hc)->get();
                 foreach ($layanan as $key => $val) {
                     $namaLayanan = LayananHC::where('id_layanan_hc', $val->layanan_id)->first();
@@ -53,25 +54,39 @@ class PermintaanHCController extends Controller
 			return DataTables::of($data)
 				->addIndexColumn()
 				->addColumn('opsi', function($row){
-                    if ($row->tanggal_kunjungan<date('Y-m-d')&&$row->status_pasien=='belum') {
-                        return "
-                        <button class='btn btn-sm btn-primary' title='terima' onclick='terima(`$row->id_permintaan_hc`)'>Terima</button>
-                        <button class='btn btn-sm btn-danger' title='tolak' onclick='tolak(`$row->id_permintaan_hc`)'>Tolak</button>
-                        ";
-                    } else if($row->tanggal_kunjungan==date('Y-m-d')){
-                        if ($row->status_pasien=='belum') {
-                            return "
-                            <button class='btn btn-sm btn-primary disabled' title='terima'>Terima</button>
-                            <button class='btn btn-sm btn-danger disabled' title='tolak'>Tolak</button>
-                            ";
-                        } else if($row->status_pembayaran=='paid') {
-                            if($row->status_pasien=='menunggu') {
-                                return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan_hc`)'>PILIH NAKES</button>";
-                            } else {
-                                return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button>";
-                            }
-                        }
-                    }
+                    // if ($row->tanggal_kunjungan!=date('Y-m-d')&&$row->status_pasien=='belum'&&$row->status_pembayaran=='pending') {
+                    //     return "
+                    //     <button class='btn btn-sm btn-primary' title='terima' onclick='terima(`$row->id_permintaan_hc`)'>Terima</button>
+                    //     <button class='btn btn-sm btn-danger' title='tolak' onclick='tolak(`$row->id_permintaan_hc`)'>Tolak</button>
+                    //     ";
+                    // } else if($row->tanggal_kunjungan==date('Y-m-d')){
+                    //     if ($row->status_pasien=='belum') {
+                    //         return "
+                    //         <button class='btn btn-sm btn-primary disabled' title='terima'>Terima</button>
+                    //         <button class='btn btn-sm btn-danger disabled' title='tolak'>Tolak</button>
+                    //         ";
+                    //     } else if($row->status_pembayaran=='paid') {
+                    //         if($row->status_pasien=='menunggu') {
+                    //             return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan_hc`)'>PILIH NAKES</button>";
+                    //         } else {
+                    //             if($row->resep_obat == '') {
+                    //                 return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button><button class='btn btn-sm btn-primary' title='eresep' onclick='detailEresep(`$row->id_permintaan_telemedicine`)'>Eresep</button>";
+
+                    //             } else {
+                    //                 return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button>";
+                    //             }
+                    //         }
+                    //     }
+                    // } else {
+                    //     // if($row->resep_obat == '') {
+                    //     //     return '<div class="text-center">-</div>';
+                    //     // } else {
+                    //     //     return "<button class='btn btn-sm btn-primary' title='eresep' onclick='detailEresep(`$row->id_permintaan_hc`)'>Eresep</button>";
+                    //     // }
+                    //     return '<div class="text-center">-</div>';
+                    // }
+                    return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan_hc`)'>PILIH NAKES</button>
+                    <button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button>";
 				})
                 ->addColumn('layanan', function($row){
                     $txt = !empty($row->listLayanan)?$row->listLayanan:'-';
@@ -95,7 +110,7 @@ class PermintaanHCController extends Controller
                         return 'MENUNGGU';
                     } else if ($row->status_pasien=='batal') {
                         return 'DIBATALKAN';
-                    } else if ($row->status_pasien=='ditolak') {
+                    } else if ($row->status_pasien=='tolak') {
                         return 'DITOLAK';
                     } else if ($row->status_pasien=='selesai') {
                         return 'SELESAI';
@@ -112,27 +127,59 @@ class PermintaanHCController extends Controller
 
     public function form(Request $request) {
         $data['title'] = "Pilih Tenaga Medis Home Care";
-        $arrayNakes = [];
         $data['view'] = isset($request->view)==1?1:0;
         if (empty($request->id)) {
             return ['code' => 500, 'type' => 'error', 'status' => 'error', 'message' => 'Terjadi kesalahan.'];
 		}
         $data['dtLayanan'] = LayananHC::all();
         $data['permintaan'] = PermintaanHC::where('id_permintaan_hc', $request->id)->first();
-        $data['layanan']    = LayananHC::where('id_layanan_hc', $data['permintaan']->layanan_hc_id)->first();
-        $getMedis = TenagaMedisPermintaanHomecare::select('tenaga_medis_id')->where('permintaan_hc_id',$data['permintaan']->id_permintaan_hc)->get();
-        foreach ($getMedis as $key => $value) {
-            array_push($arrayNakes,$value->tenaga_medis_id);
-        }
-        $data['selectedNakes'] = $arrayNakes;
+        $getLayanan = LayananPermintaanHc::select('layanan_id')
+            ->where('permintaan_id',$data['permintaan']->id_permintaan_hc)
+            ->get();
+        $data['setLayanan'] = collect($getLayanan)->map(function($dt){
+            return $dt->layanan_id;
+        })->toArray();
+        $getNakes = TenagaMedisPermintaanHomecare::select('tenaga_medis_id')->where('permintaan_hc_id',$data['permintaan']->id_permintaan_hc)->get();
+        $data['setNakes'] = collect($getNakes)->map(function($dt){
+            return $dt->tenaga_medis_id;
+        })->toArray();
         $data['nakes'] = TenagaMedisHomecare::leftJoin(DB::connection('dbranap')->raw('wahidin_ranap.users as u'),'u.id','=','tenaga_medis_homecare.nakes_id')->get();
         $content = view('admin.homecare.permintaan.modal', $data)->render();
 		return ['status' => 'success', 'content' => $content, 'data' => $data];
     }
+
+    // public function formEresep(Request $request)
+    // {
+    //     $rules = array(
+    //         'id' => 'required',
+    //     );
+    //     $messages = array(
+    //         'required'  => 'Kolom Harus Diisi',
+    //     );
+    //     $valid = Validator::make($request->all(), $rules,$messages);
+    //     if($valid->fails()) {
+    //         return ['status' => 'error', 'code' => 400, 'message' => $valid->messages()];
+    //     } else {
+    //         $permintaan = PermintaanHC::where('id_permintaan_hc', $request->id)
+    //             ->with('resep_obat', function($q) {
+    //                 $q->with('resep_obat_detail');
+    //             })
+    //             ->with('payment_permintaan_eresep')
+    //             ->first();
+
+    //         if($permintaan) {
+    //             $data['permintaan'] = $permintaan;
+    //             $content = view('admin.homecare.permintaan.modalEresep', $data)->render();
+    //             return ['status' => 'success', 'content' => $content, 'data' => $data];
+    //         }
+    //     }
+    //     return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data permintaan tidak ditemukan'];
+    // }
+
     public function tolak(Request $request) {
         try {
             $data = PermintaanHC::where('id_permintaan_hc', $request->id)->first();
-            $data->status_pasien         = 'ditolak';
+            $data->status_pasien         = 'tolak';
             $data->save();
 
             if ($data) {
@@ -167,68 +214,59 @@ class PermintaanHCController extends Controller
     {
         // return $request->all();
         $rules = array(
-            'tenaga_medis_id' => 'required',
-            'layanan_id' => 'required'
+            'tenaga_medis_id' => 'required'
         );
         $messages = array(
-            'required'  => 'Kolom Harus Diisi',
+            'tenaga_medis_id.required' => 'Tenaga medis wajib diisi'
         );
         $valid = Validator::make($request->all(), $rules,$messages);
         if($valid->fails()) {
             return ['status' => 'error', 'code' => 400, 'message' => $valid->messages()];
         } else {
+            DB::beginTransaction();
             try {
-                DB::beginTransaction();
+                # Update permintaan homecare
                 $data = PermintaanHC::where('id_permintaan_hc', $request->id)->first();
-                $data->tenaga_medis_id       = implode(';', $request->tenaga_medis_id ?? []);;
-                $data->status_pasien         = 'proses';
+                $data->status_pasien = 'proses';
+                if (empty($data->no_rm)) {
+                    $data->no_rm = Help::generateRM();
+                }
                 $data->save();
                 if (!$data) {
                     DB::rollback();
-                    return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Disimpan'];
+                    return ['code'=>400, 'type'=>'error', 'status'=>'error', 'message'=>'Gagal update permintaan homecare'];
                 }
-                # Start save to tm_customer
-                if (empty($data->no_rm)) {
-                    $noRm = Help::generateRM();
-                    $data->no_rm = $noRm;
-                    $data->save(); # Update no rm ke table permintaan hc
-
-                    $dtCustomer = [
-                        'KodeCust' => $noRm,
-                        'Tempat'   => $data->tempat_lahir,
-                        'NoKtp'    => $data->nik,
-                        'NamaCust' => $data->nama,
-                        'TglLahir' => $data->tanggal_lahir,
-                        'Alamat'   => $data->alamat,
-                        'jenisKel' => $data->jenis_kelamin,
-                        'Telp'     => $data->telepon,
-                    ];
-                    $insertCustomer = DB::connection('dbrsud')->table('tm_customer')->insert($dtCustomer);
-                    if (!$insertCustomer) {
+                # Insert to tm_customer
+                $dtCustomer = [
+                    'KodeCust' => $data->no_rm,
+                    'Tempat'   => $data->tempat_lahir,
+                    'NoKtp'    => $data->nik,
+                    'NamaCust' => $data->nama,
+                    'TglLahir' => $data->tanggal_lahir,
+                    'Alamat'   => $data->alamat,
+                    'jenisKel' => $data->jenis_kelamin,
+                    'Telp'     => $data->no_telepon,
+                ];
+                $insertCustomer = DB::connection('dbrsud')->table('tm_customer')->insert($dtCustomer);
+                if (!$insertCustomer) {
+                    DB::rollback();
+                    return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Gagal simpan customer'];
+                }
+                # Insert tenaga medis permintaan homecare
+                foreach ($request->tenaga_medis_id as $medis) {
+                    $tenagaMedis = new TenagaMedisPermintaanHomecare;
+                    $tenagaMedis->tenaga_medis_id = $medis;
+                    $tenagaMedis->permintaan_hc_id = $request->id;
+                    $tenagaMedis->save();
+                    if (!$tenagaMedis) {
                         DB::rollback();
-                        return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Disimpan'];
+                        return ['code'=>400, 'type'=>'error', 'status'=>'error', 'message'=>'gagal update tenaga medis homecare'];
                     }
                 }
-                # End save to tm_customer
-                # Start save to tenaga_medis_permintaan_homecare
-                $i = 0;
-                if ($request->tenaga_medis_id) {
-                    foreach ($request->tenaga_medis_id as $key => $value) {
-                        $tenagaMedis = new TenagaMedisPermintaanHomecare;
-                        $tenagaMedis->tenaga_medis_id = $request->tenaga_medis_id[$i];
-                        $tenagaMedis->permintaan_hc_id = $data->id_permintaan_hc;
-                        $tenagaMedis->save();
-                        $i++;
-                        if (!$tenagaMedis) {
-                            DB::rollback();
-                            return ['code' => 201, 'type' => 'error', 'status' => 'error', 'message' => 'Data Gagal Disimpan'];
-                        }
-                    }
-                }
-                # End save to tenaga_medis_permintaan_homecare
                 DB::commit();
                 return ['code' => 200, 'type' => 'success', 'status' => 'success', 'message' => 'Data Berhasil Disimpan'];
             } catch (\Throwable $e) {
+                DB::rollback();
                 $log = ['ERROR SIMPAN TENAGA MEDIS ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
                 Help::logging($log);
                 return Help::resApi('Terjadi kesalahan sistem',500);

@@ -50,13 +50,16 @@
 
 		<!-- main content -->
 		<div class="card main-layer">
-			<div class="card-header">
-				<h5>{{ $title }} Homecare
-					<button type="button" class="btn btn-success btn-sm float-end" id="lihat">LIHAT JADWAL</button>
-				</h5>
-			</div>
 			<div class="card-body">
+				
 				<form id="dayForm">
+					<div class="row">
+						<div class="col-md-9"></div>
+						<div class="col-md-3">
+							<button type="button" class="btn btn-success btn-sm float-end" id="lihat">LIHAT JADWAL</button>
+						</div>
+					</div>
+					<hr>
 					<div class="row">
 						<div class="accordion" id="accordionExample1">
 							<div class="accordion-item">
