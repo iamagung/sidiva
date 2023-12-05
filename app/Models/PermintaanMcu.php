@@ -33,4 +33,12 @@ class PermintaanMcu extends Model
     //     'jarak_ke_lokasi',
     //     ''
     // ];
+
+    public function layanan_permintaan_mcu() {
+        return $this->hasMany(LayananPermintaanMcu::class,'permintaan_id','id_permintaan');
+    }
+
+    public function payment_permintaan() {
+        return $this->hasOne(PaymentPermintaan::class, 'permintaan_id', 'id_permintaan')->where('payment_permintaan.jenis_layanan', 'mcu');
+    }
 }

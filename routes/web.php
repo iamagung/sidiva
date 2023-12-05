@@ -49,6 +49,7 @@ use App\Http\Controllers\AutoController;
 |
 */
 Route::get('/', function () {
+    // return view('error.402');
 	return redirect()->route('dashboard');
 });
 # START AUTH
@@ -135,7 +136,8 @@ Route::group(['middleware' => ['auth']], function () {
         // });
         #Laporan Layanan
         Route::group(['prefix'=>'laporan-layanan'],function(){
-			Route::get('/', [LapLayanan::class, 'main'])->name('mainLaporanLayanan');
+            Route::get('/', [LapLayanan::class, 'main'])->name('mainLaporanLayanan');
+            Route::get('/export-layanan/{bulan}/{jenis}', [LapLayanan::class, 'exportLaporanLayanan'])->name('exportLayanan');
             Route::post('/datatable-homecare', [LapLayanan::class, 'datatableHomecare'])->name('datatableHomecare');
             Route::post('/datatable-telemedicine', [LapLayanan::class, 'datatableTelemedicine'])->name('datatableTelemedicine');
             Route::post('/datatable-mcu', [LapLayanan::class, 'datatableMcu'])->name('datatableMcu');
@@ -144,6 +146,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::group(['prefix'=>'laporan-keuangan'],function(){
 			Route::get('/', [LapKeuangan::class, 'main'])->name('mainLaporanKeuangan');
             Route::post('/datatable-homecare-keuangan', [LapKeuangan::class, 'datatableHomecareKeuangan'])->name('datatableHomecareKeuangan');
+            Route::get('/export-keuangan/{bulan_awal}/{bulan_akhir}/{layanan}', [LapKeuangan::class, 'exportKeuangan'])->name('exportKeuangan');
             Route::post('/datatable-telemedicine-keuangan', [LapKeuangan::class, 'datatableTelemedicineKeuangan'])->name('datatableTelemedicineKeuangan');
             Route::post('/datatable-mcu-keuangan', [LapKeuangan::class, 'datatableMcuKeuangan'])->name('datatableMcuKeuangan');
 		});
@@ -264,6 +267,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::group(['prefix'=>'riwayat'],function(){
             Route::get('/', [RiwayatTelemedicine::class, 'main'])->name('mainRiwayatTelemedicine');
             Route::post('/export', [RiwayatTelemedicine::class, 'export'])->name('exportRiwayatTelemedicine');
+            Route::get('/export_telemedicine', [RiwayatTelemedicine::class, 'exportTelemedicine'])->name('exportRiwayatTelemedicine2');
         });
         # LAYANAN Telemedicine
         Route::group(['prefix'=>'layanan'],function(){

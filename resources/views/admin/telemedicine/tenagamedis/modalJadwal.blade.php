@@ -9,7 +9,7 @@
 			</div>
 			<div class="modal-body">
 				<form id="formJadwalMedis">
-                    <input type="hidden" name="id" id="id" value="{{!empty($tenaga_medis)?$tenaga_medis->id_tenaga_medis:''}}">
+                    <input type="hidden" name="id" id="id" value="{{!empty($tenaga_medis)?$tenaga_medis->nakes_id:''}}">
                     <div class="row mb-3">
                         <div class="col-md-12">
                             <label>Hari</label>

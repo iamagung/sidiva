@@ -14,4 +14,8 @@ class LayananHC extends Model
     public function permintaan_hc(){
         return $this->hasMany('App\Models\PermintaanHC', 'id_layanan_hc');
     }
+
+    public function layanan_permintaan_hc() {
+        $this->belongsTo(LayananPermintaanHc::class,'id_layanan_hc','layanan_id');
+    }
 }

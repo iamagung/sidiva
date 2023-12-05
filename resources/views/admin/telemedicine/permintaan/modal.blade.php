@@ -20,7 +20,7 @@
                             <select name="nakes_id" id="nakes_id" class="form-control select2" @if ($form_detail) disabled @endif>
                                 @if (count($tenagaMedisDokter) > 0)
                                     @foreach ($tenagaMedisDokter as $key => $tm)
-                                        <option value="{{$tm->nakes_id}}" @if ($permintaan->tenaga_medis_id == $tm->nakes_id) selected @endif>{{$tm->nama_nakes}}</option>
+                                        <option value="{{$tm->nakes_id}}" @if ($permintaan->tenaga_medis_id == $tm->nakes_id) selected @endif>{{$tm->user_ranap->name}}</option>
                                     @endforeach
                                 @endif
                             </select>
@@ -35,7 +35,7 @@
                                 <option value="">-Pilih-</option>
                                 @if (count($tenagaMedis) > 0)
                                     @foreach ($tenagaMedis as $key => $tm)
-                                        <option value="{{$tm->nakes_id}}" @if ($permintaan->perawat_id == $tm->nakes_id) selected @endif>{{$tm->nama_nakes}}</option>
+                                        <option value="{{$tm->nakes_id}}" @if ($permintaan->perawat_id == $tm->nakes_id) selected @endif>{{$tm->user_ranap->name}}</option>
                                     @endforeach
                                 @endif
                             </select>

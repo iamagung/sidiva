@@ -258,7 +258,8 @@ class TenagaMedisController extends Controller
         if(!$data['tenaga_medis']) {
             return ['status' => 'error', 'code' => 201, 'message' => 'Tidak ditemukan tenaga medis yang dipilih'];
         }
-        $data['jadwal_medis'] = JadwalTenagaMedis::where('nakes_id', $request->id)->get();
+        // $data['jadwal_medis'] = JadwalTenagaMedis::where('nakes_id', $request->id)->get();
+        $data['jadwal_medis'] = JadwalTenagaMedis::where('nakes_id', $data['tenaga_medis']['nakes_id'])->get();
 
         $content = view('admin.telemedicine.tenagamedis.modalJadwal', $data)->render();
 		return ['status' => 'success', 'content' => $content, 'data' => $data];

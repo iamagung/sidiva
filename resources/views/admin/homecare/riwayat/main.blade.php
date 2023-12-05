@@ -26,7 +26,7 @@
                     <input type="date" id="max" class="form-control float-left">
                 </div>
                 <div class="col-md-4" style="margin-top: 10px;">
-                    <button type="button" class="btn btn-success btn-sm float-end" onclick="exportExcel()"><i class='bx bxs-file-export'></i> Export To Excel</button>
+                    {{-- <button type="button" class="btn btn-success btn-sm float-end" onclick="exportExcel()"><i class='bx bxs-file-export'></i> Export To Excel</button> --}}
                 </div>
             </div>
             <hr>
@@ -36,12 +36,14 @@
                         <thead>
                             <tr>
                                 <td class="text-center">No</td>
+                                <td class="text-center">Tanggal Order</td>
                                 <td class="text-center">No. RM</td>
-                                <td class="text-center">Tanggal Homecare</td>
                                 <td class="text-center">Nama Pasien</td>
-                                <td class="text-center">Alamat</td>
-                                <td class="text-center">Alergi Pasien</td>
-                                <td class="text-center">status</td>
+                                <td class="text-center">Alamat Pasien</td>
+                                <td class="text-center">Layanan Homecare</td>
+                                <td class="text-center">Tanggal Mulai</td>
+                                <td class="text-center">Status</td>
+                                <td class="text-center">Tanggal Selesai</td>
                             </tr>
                         </thead>
                         <tbody>
@@ -96,18 +98,20 @@
             ajax: {
                 url: "{{route('mainRiwayatHC')}}",
                 data: {
-						min : min,
-						max : max
-					}
+                    min : min,
+                    max : max
+                }
             },
             columns: [
                 { data: "DT_RowIndex", name: "DT_RowIndex", class: "text-center"},
+                { data: "tanggal_order", name: "tanggal_order"},
                 { data: "rm", name: "rm", class: "text-center"},
-                { data: "tanggal_kunjungan", name: "tanggal_kunjungan", class: "text-center"},
-                { data: "nama", name: "nama", class: "text-center"},
-                { data: "alamat", name: "alamat", class: "text-center"},
-                { data: "alergi", name: "alergi", class: "text-center"},
+                { data: "nama", name: "nama"},
+                { data: "alamat", name: "alamat"},
+                { data: "modifyLayanan", name: "modifyLayanan"},
+                { data: "tanggal_kunjungan", name: "tanggal_kunjungan"},
                 { data: "status", name: "status", class: "text-center"},
+                { data: "modifySelesai", name: "modifySelesai"}
             ],
         })
     }

@@ -30,6 +30,11 @@ class LoginController extends Controller
             $kredensil = $request->only('username','password');
             if (Auth::attempt($kredensil)) {
                 $user = Auth::user();
+                if (!in_array($user->level, ['admin','adminmcu','adminhomecare','admintelemedis'])) {
+                    $request->session()->flush();
+                    Auth::logout();
+                    return view('error.402');
+                }
                 if ($user) {
                     return redirect()->route('dashboard');
                 }

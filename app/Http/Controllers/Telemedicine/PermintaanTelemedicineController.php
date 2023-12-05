@@ -170,9 +170,11 @@ class PermintaanTelemedicineController extends Controller
 
             if($permintaan) {
                 $data['permintaan'] = $permintaan;
-                $data['tenagaMedis'] = TenagaMedisTelemedicine::select('nakes_user.name as nama_nakes', 'nakes_id')->join(DB::connection('dbranap')->raw('wahidin_ranap.users as nakes_user'),'tenaga_medis_telemedicine.nakes_id','=','nakes_user.id')->where('tenaga_medis_telemedicine.jenis_nakes','perawat')->where('tenaga_medis_telemedicine.poli_id', $permintaan->poli_id)->get();
-                $data['tenagaMedisDokter'] = TenagaMedisTelemedicine::select('nakes_user.name as nama_nakes', 'nakes_id')->join(DB::connection('dbranap')->raw('wahidin_ranap.users as nakes_user'),'tenaga_medis_telemedicine.nakes_id','=','nakes_user.id')->where('tenaga_medis_telemedicine.jenis_nakes','dokter')->where('tenaga_medis_telemedicine.poli_id', $permintaan->poli_id)->get();
-                $data['nama_dokter'] = TenagaMedisTelemedicine::select('nakes_user.name')->join(DB::connection('dbranap')->raw('wahidin_ranap.users as nakes_user'),'tenaga_medis_telemedicine.nakes_id','=','nakes_user.id')->where('nakes_id',$permintaan->tenaga_medis_id)->first();
+                // $data['tenagaMedis'] = TenagaMedisTelemedicine::select('nakes_user.name as nama_nakes', 'nakes_id')->join(DB::connection('dbranap')->raw('wahidin_ranap.users as nakes_user'),'tenaga_medis_telemedicine.nakes_id','=','nakes_user.id')->where('tenaga_medis_telemedicine.jenis_nakes','perawat')->where('tenaga_medis_telemedicine.poli_id', $permintaan->poli_id)->get();
+                $data['tenagaMedis'] = TenagaMedisTelemedicine::with('user_ranap')->where('tenaga_medis_telemedicine.jenis_nakes','perawat')->where('tenaga_medis_telemedicine.poli_id', $permintaan->poli_id)->get();
+                // $data['tenagaMedisDokter'] = TenagaMedisTelemedicine::select('nakes_user.name as nama_nakes', 'nakes_id')->join(DB::connection('dbranap')->raw('wahidin_ranap.users as nakes_user'),'tenaga_medis_telemedicine.nakes_id','=','nakes_user.id')->where('tenaga_medis_telemedicine.jenis_nakes','dokter')->where('tenaga_medis_telemedicine.poli_id', $permintaan->poli_id)->get();
+                $data['tenagaMedisDokter'] = TenagaMedisTelemedicine::with('user_ranap')->where('tenaga_medis_telemedicine.jenis_nakes','dokter')->where('tenaga_medis_telemedicine.poli_id', $permintaan->poli_id)->get();
+                // $data['nama_dokter'] = TenagaMedisTelemedicine::select('nakes_user.name')->join(DB::connection('dbranap')->raw('wahidin_ranap.users as nakes_user'),'tenaga_medis_telemedicine.nakes_id','=','nakes_user.id')->where('nakes_id',$permintaan->tenaga_medis_id)->first();
                 $data['form_detail'] = isset($request->form_detail) ? true : false;
                 $data['title'] = "Pilih Tenaga Telemedicine";
                 $content = view('admin.telemedicine.permintaan.modal', $data)->render();

@@ -338,33 +338,47 @@ class ApiPendaftaranHcController extends Controller
             return Help::resApi('Terjadi kesalahan sistem',500);
         }
     }
-    public function getListPermintaanHC($id) {
-        try{
-            $price = 0;
-        	$permintaan = DB::table('permintaan_hc')->where('id_permintaan_hc', $id)->first();
-        	$layanan = DB::table('layanan_permintaan_hc as lphc')
-        		->leftJoin('layanan_hc as lhc','lhc.id_layanan_hc','lphc.layanan_id')
-        		->where('lphc.permintaan_id', $id)->get();
-        	foreach ($layanan as $key => $val) {
-        		$price += $val->harga;
-        		$layanan['biaya_total_layanan'] = $price;
-        	}
-        	$biayaTotal  	= $layanan['biaya_total_layanan'] + $permintaan->biaya_ke_lokasi;
-
-            $data = [
-                'data' 	   => $permintaan,
-        		'layanan'  => $layanan,
-        		'subtotal' => $biayaTotal
-            ];
-
-            if ($permintaan) {
-                return Help::custom_response(200, "success", "Berhasil", $data);
+    public function getListPermintaanHC(Request $request) {
+        $validate = Validator::make($request->all(),[
+            'id_user' => 'required'
+        ],[
+            'id_user.required' => 'ID User Wajib Di isi'
+        ]);
+        if (!$validate->fails()) {
+            try{
+                $price = 0;
+                $arrLayanan = [];
+                $user = User::select('id','name','nik','no_rm')
+                    ->leftJoin('users_android as ua','ua.user_id','users.id')
+                    ->where('users.id',$request->id_user)
+                    ->first();
+                $permintaan = PermintaanHC::where('nik', $user->nik)
+                ->whereIn('status_pasien', ['menunggu', 'belum', 'proses'])
+                ->where('status_pembayaran', '=', 'pending')
+                ->where('tanggal_kunjungan', '>', date('Y-m-d'))
+                ->with('layanan_permintaan_hc',function($qq) {
+                    $qq->with('layanan_hc');
+                })
+                ->orderBy('id_permintaan_hc','ASC')->get();
+                foreach($permintaan as $k => $v){
+                    $subtotal = 0;
+                    foreach ($v->layanan_permintaan_hc as $l) {
+                        $subtotal += $l->layanan_hc->harga;
+                    }
+                    $permintaan[$k]['subtotal'] = $subtotal+$v->biaya_ke_lokasi;
+                    // return $v->layanan_permintaan_hc[0]->layanan_hc->harga;
+                }
+                if (count($permintaan)==0) {
+                    return Help::custom_response(204, "error", "Data not found",null);
+                }
+                return Help::custom_response(200, "success", "Berhasil", $permintaan);
+            } catch (\Throwable $e) {
+                $log = ['ERROR GET LIST PEMBAYARAN MCU ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
+                Help::logging($log);
+                return Help::resApi('Terjadi kesalahan sistem',500);
             }
-            return Help::custom_response(204, "error", "data tidak ditemukan", null);
-        } catch (\Throwable $e) {
-            $log = ['ERROR GET LIST PEMBAYARAN MCU ('.$e->getFile().')',false,$e->getMessage(),$e->getLine()];
-            Help::logging($log);
-            return Help::resApi('Terjadi kesalahan sistem',500);
+        } else {
+            return Help::resApi($validate->errors()->all()[0],400);
         }
     }
     public function invoiceHC(Request $request) {

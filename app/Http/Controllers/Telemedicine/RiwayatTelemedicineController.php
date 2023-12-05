@@ -9,8 +9,9 @@ use App\Models\PaketTelemedicine;
 use App\Models\LayananTelemedicine;
 use App\Helpers\Helpers as Help;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
-use Maatwebsite\Excel\Facades\Excel;
-use DataTables, Validator, DB, Auth;
+use App\Exports\RiwayatPermintaanTelemedicineExport;
+// use Maatwebsite\Excel\Facades\Excel;
+use DataTables, Validator, DB, Auth, Excel;
 
 class RiwayatTelemedicineController extends Controller
 {
@@ -30,9 +31,10 @@ class RiwayatTelemedicineController extends Controller
                     ->with(['perawat' => function($q) {
                         $q->select('nakes_id')->with('user_ranap:id,name as nama_perawat');
                     }])
-                    ->when($request->status!='all',fn($q) => 
-                        $q->where('status_pasien', $request->status)
-                    )
+                    ->whereIn('status_pasien', ['batal','selesai','tolak'])
+                    // ->when($request->status!='all',fn($q) =>
+                    //     $q->where('status_pasien', $request->status)
+                    // )
                     ->whereBetween('tanggal_order', [$request->min, $request->max])
                     ->orderBy('permintaan_telemedicine.created_at','ASC')->get();
 			return DataTables::of($data)
@@ -92,6 +94,11 @@ class RiwayatTelemedicineController extends Controller
         return view('admin.telemedicine.riwayat.main', $data);
     }
 
+    public function exportTelemedicine() {
+        return Excel::download(new RiwayatPermintaanTelemedicineExport('$startDate', '$endDate', '$request->status'), 'Riwayat.xlsx');
+
+    }
+
     public function export(Request $request)
 	{
 		$data['date'] = date('Y-m-d');
@@ -100,6 +107,10 @@ class RiwayatTelemedicineController extends Controller
         $data['status'] = ($request->status == 'all') ? 'Semua' : $request->status;
 		$startDate = $request->startDate;
 		$endDate = $request->endDate;
+        // return (new RiwayatPermintaanTelemedicineExport($startDate, $endDate, $request->status))->download('users.xlsx');
+        // return $eee = new RiwayatPermintaanTelemedicineExport($startDate, $endDate, $request->status);
+        return Excel::download(new RiwayatPermintaanTelemedicineExport($startDate, $endDate, $request->status), 'Riwayat.xlsx');
+		$this->query($startDate, $endDate, $request->status);
 		$this->query($startDate, $endDate, $request->status);
 		$data['data'] = $this->data;
 		if (count($this->data) > 0) {

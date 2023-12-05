@@ -34,10 +34,10 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center">
-                        <span id="ttlPermintaanHC" style="font-weight: bold; font-size: 14pt; color: #000;">0</span>
+                        <span id="totalHomecare" style="font-weight: bold; font-size: 14pt; color: #000;">0</span>
                     </div>
                     <div class="float-left">
-                        <span id="presPermintaanHC" style="background: #A484B0; border-radius: 3px; color: #fff;" class="mb-0 ms-auto">+0%</span>
+                        <span id="presentaseHomecare" style="background: #A484B0; border-radius: 3px; color: #fff;" class="mb-0 ms-auto">+0%</span>
                         <span style="font-size: 7pt">Dari Bulan Sebelumnya</span>
                     </div>
                 </div>
@@ -55,10 +55,10 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center">
-                        <span id="ttlPermintaanTelemedis" style="font-weight: bold; font-size: 14pt; color: #000;">0</span>
+                        <span id="totalTelemedicine" style="font-weight: bold; font-size: 14pt; color: #000;">0</span>
                     </div>
                     <div class="float-left">
-                        <span id="presPermintaanTelemedis" style="background: #A484B0; border-radius: 3px; color: #fff;" class="mb-0 ms-auto">+0%</span>
+                        <span id="presentaseTelemedicine" style="background: #A484B0; border-radius: 3px; color: #fff;" class="mb-0 ms-auto">+0%</span>
                         <span style="font-size: 7pt">Dari Bulan Sebelumnya</span>
                     </div>
                 </div>
@@ -76,36 +76,15 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center">
-                        <span id="ttlPermintaanMcu" style="font-weight: bold; font-size: 14pt; color: #000;">0</span>
+                        <span id="totalMcu" style="font-weight: bold; font-size: 14pt; color: #000;">0</span>
                     </div>
                     <div class="float-left">
-                        <span id="presPermintaanMcu" style="background: #A484B0; border-radius: 3px; color: #fff;" class="mb-0 ms-auto">+0%</span>
+                        <span id="presentaseMcu" style="background: #A484B0; border-radius: 3px; color: #fff;" class="mb-0 ms-auto">+0%</span>
                         <span style="font-size: 7pt">Dari Bulan Sebelumnya</span>
                     </div>
                 </div>
             </div>
         </div>
-        {{-- <div class="col-md-3">
-            <div class="card radius-10">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <span class="mb-0" style="font-size: 8pt; font-weight: bold">PERMINTAAN PSC</span>
-                        <div class="ms-auto">
-                            <div class="radius-10" style="background: #D9D9D9">
-                                <i class="bx bx-desktop fs-3" style="color: #ffffff;"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <span id="ttlPermintaanPsc" style="font-weight: bold; font-size: 14pt; color: #000;">0</span>
-                    </div>
-                    <div class="float-left">
-                        <span id="presPermintaanPsc" style="background: #A484B0; border-radius: 3px; color: #fff;" class="mb-0 ms-auto">+0%</span>
-                        <span style="font-size: 7pt">Dari Bulan Sebelumnya</span>
-                    </div>
-                </div>
-            </div>
-        </div> --}}
     </div>
 </div>
 @endsection
@@ -113,10 +92,12 @@
 @push('script')
 <script type="text/javascript">
     $.get("{{ route('getDataDashboard') }}").done(function(result){
-        $('#ttlPermintaanHC').text(result.data.ttlPermintaanHC);
-        $('#presPermintaanHC').text(result.data.diffPermintaanHC);
-        $('#ttlPermintaanMCU').text(result.data.ttlPermintaanMCU);
-        $('#presPermintaanMCU').text(result.data.diffPermintaanMcu);
+        $('#totalHomecare').text(result.data.ttlPermintaanHC);
+        $('#presentaseHomecare').text(result.data.diffPermintaanHC);
+        $('#totalMcu').text(result.data.ttlPermintaanMCU);
+        $('#presentaseMcu').text(result.data.diffPermintaanMcu);
+        $('#presentaseTelemedicine').text(result.data.diffPermintaanTele);
+        $('#totalTelemedicine').text(result.data.ttlPermintaanTele);
     });
 </script>
 @endpush

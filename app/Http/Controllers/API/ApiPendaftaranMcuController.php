@@ -264,6 +264,10 @@ class ApiPendaftaranMcuController extends Controller
         }
     }
 
+    public function getListMcu() {
+        // Auth::user()->id;
+    }
+
     public function invoiceMCU(Request $request) {
         $validate = Validator::make($request->all(),[
             'id_permintaan' => 'required'

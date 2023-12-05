@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\PermintaanHC;
 use App\Models\PaketHC;
 use App\Models\LayananHC;
+use App\Models\LayananPermintaanHc;
 use App\Helpers\Helpers as Help;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use Maatwebsite\Excel\Facades\Excel;
@@ -22,16 +23,31 @@ class RiwayatHCController extends Controller
     public function main(Request $request)
     {
         if(request()->ajax()){
-            $data = PermintaanHC::where('status_pasien', 'selesai')
+            $data = PermintaanHC::whereIn('status_pasien',['batal','tolak','selesai'])
                 ->whereBetween('tanggal_kunjungan', [$request->min, $request->max])
-                ->orderBy('created_at','ASC')->get();
-			return DataTables::of($data)
+                ->orderBy('id_permintaan_hc','DESC')->get();
+            
+            foreach ($data as $k => $v) {
+                $layanan = LayananPermintaanHc::where('permintaan_id', $v->id_permintaan_hc)->get();
+                foreach ($layanan as $key => $val) {
+                    $namaLayanan = LayananHC::where('id_layanan_hc', $val->layanan_id)->first();
+                    if (!empty($namaLayanan)) {
+                        if(!isset($v->listLayanan)){
+                            $v->listLayanan = $namaLayanan->nama_layanan;
+                        }else{
+                            $v->listLayanan .= ", " . $namaLayanan->nama_layanan;
+                        }
+                    }
+                }
+            }
+            return DataTables::of($data)
             ->addIndexColumn()
             ->addColumn('status', function($row){
                 if ($row->status_pasien == 'selesai') {
                     $text = 'SELESAI';
-                } else if($row->status_pasien != 'batal' && $row->status_pasien != 'selesai') {
-                    $text = "<a href='javascript:void(0)' style='color: #000' onclick='lanjutkan(`$row->id_permintaan_hc`)'>DILANJUTKAN</a>";
+                } else {
+                    // $text = "<a href='javascript:void(0)' style='color: #000' onclick='lanjutkan(`$row->id_permintaan_hc`)'>DILANJUTKAN</a>";
+                    $text = "<a href='javascript:void(0)' style='color: #000'>DILANJUTKAN</a>";
                 }
                 return $text;
             })
@@ -43,15 +59,15 @@ class RiwayatHCController extends Controller
                 }
                 return $text;
             })
-            ->addColumn('alergi', function($row){
-                if (!empty($row->alergi_pasien)) {
-                    $text = $row->alergi_pasien;
-                } else {
-                    $text = '-';
-                }
+            ->addColumn('modifySelesai', function($row){
+                $text = substr($row->updated_at,0,10);
                 return $text;
             })
-            ->rawColumns(['actions'])
+            ->addColumn('modifyLayanan', function($row){
+                $text = !empty($row->listLayanan)?$row->listLayanan:'-';
+                return $text;
+            })
+            ->rawColumns(['actions','status'])
             ->toJson();
 		}
         $data['title'] = $this->title;

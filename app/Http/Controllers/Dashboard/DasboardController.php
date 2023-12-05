@@ -12,27 +12,24 @@ use Carbon\Carbon;
 class DasboardController extends Controller
 {
     # Start admin
-    public function main()
-    {
+    public function main() {
         $data['title'] = 'Dashboard';
         $data['menu'] = 'dashboard';
         return view('admin.dashboard.main', $data);
     }
-    public function getData()
-    {
+    public function getData() {
         $today = date('Y-m-d');
         $monthNow = date('m');
         $yearNow = date('Y');
         $monthPrev = now()->subMonth()->format('m');
         $yearPrev = now()->subMonth()->format('Y');
-        $data['ttlPermintaanHC']   = PermintaanHC::where('tanggal_kunjungan', $today)->count();
-        $data['ttlTerlayananiHC']  = PermintaanHC::whereNotIn('status_pasien', ['belum', 'batal'])->where('tanggal_kunjungan', $today)->count();
-        $data['ttlPermintaanMCU']  = PermintaanMcu::where('tanggal_kunjungan', $today)->count();
-        $data['ttlTerlayananiMCU'] = PermintaanMcu::whereNotIn('status_pasien', ['belum', 'batal'])->where('tanggal_kunjungan', $today)->count();
+        $data['ttlPermintaanHC']   = PermintaanHC::where('tanggal_kunjungan', $today)->whereNotIn('status_pasien',['batal','tolak'])->count(); 
+        $data['ttlPermintaanMCU']  = PermintaanMcu::where('tanggal_kunjungan', $today)->whereNotIn('status_pasien',['batal','tolak'])->count();
+        $data['ttlPermintaanTele']  = PermintaanTelemedicine::where('tanggal_kunjungan', $today)->whereNotIn('status_pasien',['batal','tolak'])->count();
         #1 Start calculate presentase permintaan HC bulan ini dengan bulan kemaren
-        $getHcNowMonth  = PermintaanHC::whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
-        $getHcPrevMonth  = PermintaanHC::whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
-        if ($getHcNowMonth > 0 && $getHcPrevMonth > 0) {
+        $getHcNowMonth  = PermintaanHC::whereNotIn('status_pasien',['batal','tolak'])->whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
+        $getHcPrevMonth  = PermintaanHC::whereNotIn('status_pasien',['batal','tolak'])->whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
+        if ($getHcNowMonth>0 && $getHcPrevMonth>0) {
             $percentPermintaanHC = round((($getHcNowMonth-$getHcPrevMonth)/$getHcNowMonth)*100);
             if (substr($percentPermintaanHC, 0,1) == '-' || $percentPermintaanHC == 0) {
                 $data['diffPermintaanHC'] = "$percentPermintaanHC%";
@@ -43,24 +40,10 @@ class DasboardController extends Controller
             $data['diffPermintaanHC'] = "+0%";
         }
         # end
-        #2 Start calculate presentase Homecare Terlayani bulan ini dengan bulan kemaren
-        $getLayanHcNowMonth  = PermintaanHC::whereNotIn('status_pasien', ['belum', 'batal'])->whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
-        $getLayanHcPrevMonth  = PermintaanHC::whereNotIn('status_pasien', ['belum', 'batal'])->whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
-        if ($getLayanHcNowMonth > 0 && $getLayanHcPrevMonth > 0) {
-            $percentLayanHC = round((($getLayanHcNowMonth-$getLayanHcPrevMonth)/$getLayanHcNowMonth)*100);
-            if (substr($percentLayanHC, 0,1) == '-' || $percentLayanHC == 0) {
-                $data['diffLayanHC'] = "$percentLayanHC%";
-            } else {
-                $data['diffLayanHC'] = "+$percentLayanHC%";
-            }
-        } else {
-            $data['diffLayanHC'] = "+0%";
-        }
-        # end
-        #3 Start calculate presentase permintaan MCU bulan ini dengan bulan kemaren
-        $getMcuNowMonth  = PermintaanMcu::whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
-        $getMcuPrevMonth  = permintaanMcu::whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
-        if ($getMcuNowMonth > 0 && $getMcuPrevMonth > 0) {
+        #2 Start calculate presentase permintaan MCU bulan ini dengan bulan kemaren
+        $getMcuNowMonth  = PermintaanMcu::whereNotIn('status_pasien',['batal','tolak'])->whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
+        $getMcuPrevMonth  = permintaanMcu::whereNotIn('status_pasien',['batal','tolak'])->whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
+        if ($getMcuNowMonth>0 && $getMcuPrevMonth>0) {
             $percentPermintaanMCU = round((($getMcuNowMonth-$getMcuPrevMonth)/$getMcuNowMonth)*100);
             if (substr($percentPermintaanMCU, 0,1) == '-' || $percentPermintaanMCU == 0) {
                 $data['diffPermintaanMcu'] = "$percentPermintaanMCU%";
@@ -71,83 +54,21 @@ class DasboardController extends Controller
             $data['diffPermintaanMcu'] = "+0%";
         }
         # end
-        #4 Start calculate presentase MCU Terlayani bulan ini dengan bulan kemaren
-        $getLayanMcuNowMonth  = PermintaanMcu::whereNotIn('status_pasien', ['belum', 'batal'])->whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
-        $getLayanMcuPrevMonth  = PermintaanMcu::whereNotIn('status_pasien', ['belum', 'batal'])->whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
-        if ($getLayanMcuNowMonth > 0 && $getLayanMcuPrevMonth > 0) {
-            $percentLayanMcu = round((($getLayanMcuNowMonth-$getLayanMcuPrevMonth)/$getLayanMcuNowMonth)*100);
-            if (substr($percentLayanMcu, 0,1) == '-' || $percentLayanMcu == 0) {
-                $data['diffLayanMcu'] = "$percentLayanMcu%";
+        #3 Start calculate presentase permintaan Telemedicine bulan ini dengan bulan kemaren
+        $getTeleNowMonth  = PermintaanMcu::whereNotIn('status_pasien',['batal','tolak'])->whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
+        $getTelePrevMonth  = permintaanMcu::whereNotIn('status_pasien',['batal','tolak'])->whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
+        if ($getTeleNowMonth>0 && $getTelePrevMonth>0) {
+            $percentPermintaanTele = round((($getTeleNowMonth-$getTelePrevMonth)/$getTeleNowMonth)*100);
+            if (substr($percentPermintaanTele, 0,1) == '-' || $percentPermintaanTele == 0) {
+                $data['diffPermintaanTele'] = "$percentPermintaanTele%";
             } else {
-                $data['diffLayanMcu'] = "+$percentLayanMcu%";
+                $data['diffPermintaanTele'] = "+$percentPermintaanTele%";
             }
         } else {
-            $data['diffLayanMcu'] = "+0%";
+            $data['diffPermintaanTele'] = "+0%";
         }
         # end
         return ['code' => 200, 'status' => 'success', 'message' => 'Berhasil', 'data' => $data];
     }
     # End admin
-    # STart homecare
-    public function mainHomecare() {
-        $data['title'] = 'Dashboard Homecare';
-        $data['menu'] = 'dashboardHomecare';
-        return view('admin.dashboard.homecare', $data);
-    }
-    public function getDataHomecare()
-    {
-        $today = date('Y-m-d');
-        $monthNow = date('m');
-        $yearNow = date('Y');
-        $monthPrev = now()->subMonth()->format('m');
-        $yearPrev = now()->subMonth()->format('Y');
-        $data['ttlPermintaanHC']   = PermintaanHC::where('tanggal_kunjungan', $today)->count();
-        #1 Start calculate presentase permintaan HC bulan ini dengan bulan kemaren
-        $getHcNowMonth  = PermintaanHC::whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
-        $getHcPrevMonth  = PermintaanHC::whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
-        if ($getHcNowMonth > 0 && $getHcPrevMonth > 0) {
-            $percentPermintaanHC = round((($getHcNowMonth-$getHcPrevMonth)/$getHcNowMonth)*100);
-            if (substr($percentPermintaanHC, 0,1) == '-' || $percentPermintaanHC == 0) {
-                $data['diffPermintaanHC'] = "$percentPermintaanHC%";
-            } else {
-                $data['diffPermintaanHC'] = "+$percentPermintaanHC%";
-            }
-        } else {
-            $data['diffPermintaanHC'] = "+0%";
-        }
-        # end
-        return ['code' => 200, 'status' => 'success', 'message' => 'Berhasil', 'data' => $data];
-    }
-    # End Homecare
-    # Start Telemedicine
-    public function mainTelemedicine() {
-        $data['title'] = 'Dashboard Homecare';
-        $data['menu'] = 'dashboardHomecare';
-        return view('admin.dashboard.telemedicine', $data);
-    }
-    public function getDataTelemedicine()
-    {
-        $today = date('Y-m-d');
-        $monthNow = date('m');
-        $yearNow = date('Y');
-        $monthPrev = now()->subMonth()->format('m');
-        $yearPrev = now()->subMonth()->format('Y');
-        $data['ttlPermintaanTelemedicine']   = PermintaanTelemedicine::where('tanggal_kunjungan', $today)->count();
-        #1 Start calculate presentase permintaan HC bulan ini dengan bulan kemaren
-        $getHcNowMonth  = PermintaanTelemedicine::whereYear('tanggal_kunjungan', '=', $yearNow)->whereMonth('tanggal_kunjungan', '=', $monthNow)->count();
-        $getHcPrevMonth  = PermintaanTelemedicine::whereYear('tanggal_kunjungan', '=', $yearPrev)->whereMonth('tanggal_kunjungan', '=', $monthPrev)->count();
-        if ($getHcNowMonth > 0 && $getHcPrevMonth > 0) {
-            $percentPermintaanTelemedicine = round((($getHcNowMonth-$getHcPrevMonth)/$getHcNowMonth)*100);
-            if (substr($percentPermintaanTelemedicine, 0,1) == '-' || $percentPermintaanTelemedicine == 0) {
-                $data['diffPermintaanTelemedicine'] = "$percentPermintaanTelemedicine%";
-            } else {
-                $data['diffPermintaanTelemedicine'] = "+$percentPermintaanTelemedicine%";
-            }
-        } else {
-            $data['diffPermintaanTelemedicine'] = "+0%";
-        }
-        # end
-        return ['code' => 200, 'status' => 'success', 'message' => 'Berhasil', 'data' => $data];
-    }
-    # End Telemedicine
 }

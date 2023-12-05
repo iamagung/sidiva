@@ -100,8 +100,9 @@ class ApiAuthController extends Controller
             return Help::resApi('Unauthorized.',401);
         }
         try {
-            $user = User::where('username', $request->username)
-                ->whereIn('level',['pasien','dokter','perawat'])
+            $user = User::leftJoin('users_android as ua','ua.user_id','users.id')
+                ->where('users.username', $request->username)
+                ->whereIn('users.level',['pasien','dokter','perawat'])
                 ->first();
             if (!$user) {
                 return Help::resApi('User not found.',400);
@@ -171,9 +172,7 @@ class ApiAuthController extends Controller
                     return Help::custom_response(400, "error", "OTP Expired!", null);
 
                 Authentication::update_expired($request);
-				$user = User::leftJoin('users_android as ua','ua.user_id','users.id')
-					->where('users.telepon', '=', $cek->wa)
-					->first();
+				$user = User::where('telepon', '=', $cek->wa)->first();
 				return $this->set_token($user);
 			}
 

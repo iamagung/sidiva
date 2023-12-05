@@ -14,15 +14,15 @@ class TenagaMedisTelemedicine extends Model{
 	// protected $connection = 'mysql';
     // protected $connection = 'mysql';
     // protected $table_name = 'mysql.tenaga_medis_telemedicine';
-    protected $table = 'tenaga_medis_telemedicine';
+    // protected $table = 'tenaga_medis_telemedicine';
 	protected $primaryKey = 'id_tenaga_medis';
     // protected $table = 'tenaga_medis_telemedicine';
 	public function __construct(){
-        // $this->setConnection('mysql');
+        $this->setConnection('mysql');
         // $this->connection('mysql');
         // $this->connection = Config::get('database.default');
         // $this->connection = 'mysql';
-		// $this->table = Config::get('database.connections.mysql.database').'.stenaga_medis_telemedicine';
+		$this->table = Config::get('database.connections.mysql.database').'.tenaga_medis_telemedicine';
 		// $this->table = 'sidiva.ftenaga_medis_telemedicine';
         // parent::__construct($attributes);
 	}
@@ -37,7 +37,7 @@ class TenagaMedisTelemedicine extends Model{
 	}
 
 	public function jadwalMedis(){
-		return $this->hasMany('App\Models\JadwalTenagaMedis', 'nakes_id', 'id_tenaga_medis');
+		return $this->hasMany('App\Models\JadwalTenagaMedis', 'nakes_id', 'nakes_id');
 	}
 
 	public function permintaan(){

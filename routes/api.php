@@ -79,7 +79,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('/get_syarat_aturan_hc', [ApiPendaftaranHC::class, 'getSyaratAturanHC']);
             Route::post('/detail_layanan_hc', [ApiPendaftaranHC::class, 'getDetailLayananHC']);
             Route::post('/pesan_jadwal_hc', [ApiPendaftaranHC::class, 'pesanJadwalHC']);
-            Route::get('/list_permintaan_hc/{id}', [ApiPendaftaranHC::class, 'getListPermintaanHC']);
+            Route::post('/list_permintaan_hc', [ApiPendaftaranHC::class, 'getListPermintaanHC']);
             Route::post('/selesaikan_pelayanan_hc', [ApiPendaftaranHC::class, 'selesaikanPelayananHC']);
             Route::post('/riwayat_permintaan_hc', [ApiPendaftaranHC::class, 'riwayatPermintaanHomecare']);
             // Route::get('/get_permintaan_tm/{id}', [ApiPendaftaranHC::class, 'getPermintaanTM']);

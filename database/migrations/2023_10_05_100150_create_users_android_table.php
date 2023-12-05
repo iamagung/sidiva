@@ -17,6 +17,7 @@ class CreateUsersAndroidTable extends Migration
             $table->bigIncrements('id_users_android');
             $table->integer('user_id');
             $table->string('nik');
+            $table->string('no_rm',20)->nullable();
             $table->string('tempat_lahir');
             $table->date('tanggal_lahir');
             $table->string('jenis_kelamin',10);

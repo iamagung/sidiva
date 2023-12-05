@@ -49,29 +49,29 @@ class PermintaanMcuController extends Controller
 			return DataTables::of($data)
 				->addIndexColumn()
 				->addColumn('opsi', function($row){
-                    // if ($row->tanggal_kunjungan!=date('Y-m-d')&&$row->status_pasien=='belum'&&$row->status_pembayaran=='pending') {
-                    //     return "
-                    //     <button class='btn btn-sm btn-primary' title='terima' onclick='terima(`$row->id_permintaan`)'>Terima</button>
-                    //     <button class='btn btn-sm btn-danger' title='tolak' onclick='tolak(`$row->id_permintaan`)'>Tolak</button>
-                    //     ";
-                    // } else if($row->tanggal_kunjungan==date('Y-m-d')){
-                    //     if ($row->status_pasien=='belum') {
-                    //         return "
-                    //         <button class='btn btn-sm btn-primary disabled' title='terima'>Terima</button>
-                    //         <button class='btn btn-sm btn-danger disabled' title='tolak'>Tolak</button>
-                    //         ";
-                    //     } else if($row->status_pembayaran=='paid') {
-                    //         if($row->status_pasien=='menunggu') {
-                    //             return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan`)'>PILIH NAKES</button>";
-                    //         } else {
-                    //             return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan`)'>DETAIL</button>";
-                    //         }
-                    //     }
-                    // } else {
-                    //     return '<div class="text-center">-</div>';
-                    // }
-                    return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan`)'>PILIH JADWAL</button>
-                    <button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan`)'>DETAIL</button>";
+                    if ($row->tanggal_kunjungan!=date('Y-m-d')&&$row->status_pasien=='belum'&&$row->status_pembayaran=='pending') {
+                        return "
+                        <button class='btn btn-sm btn-primary' title='terima' onclick='terima(`$row->id_permintaan`)'>Terima</button>
+                        <button class='btn btn-sm btn-danger' title='tolak' onclick='tolak(`$row->id_permintaan`)'>Tolak</button>
+                        ";
+                    } else if($row->tanggal_kunjungan==date('Y-m-d')){
+                        if ($row->status_pasien=='belum') {
+                            return "
+                            <button class='btn btn-sm btn-primary disabled' title='terima'>Terima</button>
+                            <button class='btn btn-sm btn-danger disabled' title='tolak'>Tolak</button>
+                            ";
+                        } else if($row->status_pembayaran=='paid') {
+                            if($row->status_pasien=='menunggu') {
+                                return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan`)'>PILIH NAKES</button>";
+                            } else {
+                                return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan`)'>DETAIL</button>";
+                            }
+                        }
+                    } else {
+                        return '<div class="text-center">-</div>';
+                    }
+                    // return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan`)'>PILIH JADWAL</button>
+                    // <button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan`)'>DETAIL</button>";
 				})
                 ->addColumn('no_rm', function($row){
 					return $text = ($row->no_rm)?$row->no_rm:'-';

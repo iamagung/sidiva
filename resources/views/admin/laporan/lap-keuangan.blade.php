@@ -50,10 +50,10 @@
                             <div class="float-end" style="margin-top: 5px;">Bulan</div>
                         </div>
                         <div class="col-md-2">
-                            <input type="text" name="bulan_awal" id="bulan_awal" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
+                            <input type="text" value="{{date('m-Y')}}" name="bulan_awal" id="bulan_awal" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
                         </div>
                         <div class="col-md-2">
-                            <input type="text" name="bulan_akhir" id="bulan_akhir" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
+                            <input type="text" value="{{date('m-Y')}}" name="bulan_akhir" id="bulan_akhir" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
                         </div>
                         <div class="col-md-5">
                             <div class="form-group">
@@ -62,7 +62,7 @@
                             </div>
                         </div>
                         <div class="col-md-2">
-                            <button type="button" class="btn btn-secondary btn-sm float-end" onclick="export('homecare')"><i class='bx bxs-report'></i> Export</button>
+                            <button type="button" class="btn btn-secondary btn-sm float-end" onclick="exportExcel('homecare')"><i class='bx bxs-report'></i> Export</button>
                         </div>
                     </div>
                     <div class="row">
@@ -97,10 +97,10 @@
                                 <div class="float-end" style="margin-top: 5px;">Bulan</div>
                             </div>
                             <div class="col-md-2">
-                                <input type="text" name="bulan_awal_telemedicine" id="bulan_awal_telemedicine" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
+                                <input type="text" value="{{date('m-Y')}}" name="bulan_awal_telemedicine" id="bulan_awal_telemedicine" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
                             </div>
                             <div class="col-md-2">
-                                <input type="text" name="bulan_akhir_telemedicine" id="bulan_akhir_telemedicine" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
+                                <input type="text" value="{{date('m-Y')}}" name="bulan_akhir_telemedicine" id="bulan_akhir_telemedicine" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
                             </div>
                             <div class="col-md-5">
                                 <div class="form-group">
@@ -109,7 +109,7 @@
                                 </div>
                             </div>
                             <div class="col-md-2">
-                                <button type="button" class="btn btn-secondary btn-sm float-end" onclick="export('telemedicine')"><i class='bx bxs-report'></i> Export</button>
+                                <button type="button" class="btn btn-secondary btn-sm float-end" onclick="exportExcel('telemedicine')"><i class='bx bxs-report'></i> Export</button>
                             </div>
                         </div>
                     </div>
@@ -145,10 +145,10 @@
                             <div class="float-end" style="margin-top: 5px;">Bulan</div>
                         </div>
                         <div class="col-md-2">
-                            <input type="text" name="bulan_awal_mcu" id="bulan_awal_mcu" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
+                            <input type="text" value="{{date('m-Y')}}" name="bulan_awal_mcu" id="bulan_awal_mcu" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
                         </div>
                         <div class="col-md-2">
-                            <input type="text" name="bulan_akhir_mcu" id="bulan_akhir_mcu" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
+                            <input type="text" value="{{date('m-Y')}}" name="bulan_akhir_mcu" id="bulan_akhir_mcu" class="form-control datepicker" style="text-align:center" autocomplete="off" readonly>
                         </div>
                         <div class="col-md-5">
                             <div class="form-group">
@@ -157,7 +157,7 @@
                             </div>
                         </div>
                         <div class="col-md-2">
-                            <button type="button" class="btn btn-secondary btn-sm float-end" onclick="export('mcu')"><i class='bx bxs-report'></i> Export</button>
+                            <button type="button" class="btn btn-secondary btn-sm float-end" onclick="exportExcel('mcu')"><i class='bx bxs-report'></i> Export</button>
                         </div>
                     </div>
                     <div class="row">
@@ -244,6 +244,12 @@
                 { data: "modifyStatus", name: "modifyStatus"}
             ]
         });
+        table.on('xhr.dt', function ( e, settings, json, xhr ) {
+            // console.log(json);
+            if(json.data.length > 0) {
+                $('#totalHomecare').text(json.data[0].total);
+            }
+        } )
     }
     // DataTable Telemedicine
     function tableTelemedicine(awaltelemedicine,akhirtelemedicine) {
@@ -279,6 +285,12 @@
         //     var test = table.ajax.json().tes;
         //     $('#totaltelemedicine').text(test);
         // });
+        table.on('xhr.dt', function ( e, settings, json, xhr ) {
+            // console.log(json);
+            if(json.data.length > 0) {
+                $('#totaltelemedicine').text(json.data[0].tes);
+            }
+        } )
     }
     // DataTable MCU
     function tableMcu(awalmcu, akhirmcu) {
@@ -309,6 +321,12 @@
                 { data: "modifyStatus", name: "modifyStatus"},
             ]
         });
+        table.on('xhr.dt', function ( e, settings, json, xhr ) {
+            // console.log(json);
+            if(json.data.length > 0) {
+                $('#totalMcu').text(json.data[0].total);
+            }
+        } )
     }
     //filter between two month HOMECARE
     function filterByMonth() {
@@ -341,13 +359,32 @@
         $("#bulan_awal_telemedicine").change(function (e) {
 			e.preventDefault();
             $('#datatabelTelemedicineKeuangan').DataTable().destroy();
-			tableMcu($(this).val(),$('#bulan_akhir_telemedicine').val());
+			tableTelemedicine($(this).val(),$('#bulan_akhir_telemedicine').val());
 		});
         $("#bulan_akhir_telemedicine").change(function (e) {
 			e.preventDefault();
             $('#datatabelTelemedicineKeuangan').DataTable().destroy();
-			tableMcu($('#bulan_awal_telemedicine').val(),$(this).val());
+			tableTelemedicine($('#bulan_awal_telemedicine').val(),$(this).val());
 		});
+    }
+
+    function exportExcel(params) {
+        console.log(params);
+        if(params=='homecare'){
+            var bulan_awal = $('#bulan_awal').val();
+            var bulan_akhir = $('#bulan_akhir').val();
+        } else if (params=='telemedicine') {
+            var bulan_awal = $('#bulan_awal_telemedicine').val();
+            var bulan_akhir = $('#bulan_akhir_telemedicine').val();
+        } else {
+            var bulan_awal = $('#bulan_awal_mcu').val();
+            var bulan_akhir = $('#bulan_akhir_mcu').val();
+        }
+        var url = "{{route('exportKeuangan',[':bulan_awal',':bulan_akhir',':layanan'])}}";
+        url = url.replace(':bulan_awal',bulan_awal);
+        url = url.replace(':bulan_akhir',bulan_akhir);
+        url = url.replace(':layanan',params);
+        window.location = url;
     }
 </script>
 @endpush

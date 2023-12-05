@@ -16,7 +16,7 @@ class PaymentPermintaan extends Model
     }
 
     public function permintaan_telemedicine() {
-        return $this->belongsTo(PermintaanTelemedicine::class, 'permintaan_id', 'id_permintaan_telemedicine')->where('jenis_layanan','telemedicine');
+        return $this->belongsTo(PermintaanTelemedicine::class, 'permintaan_id', 'id_permintaan_telemedicine');
     }
 
     public function resep_obat_telemedicine() {
@@ -29,5 +29,13 @@ class PaymentPermintaan extends Model
 
     public function get_telemedicine() {
         return $this->where('jenis_layanan', 'telemedicine');
+    }
+
+    public function permintaan_hc() {
+        return $this->belongsTo(PermintaanHC::class, 'permintaan_id', 'id_permintaan_hc');
+    }
+
+    public function permintaan_mcu() {
+        return $this->belongsTo(PermintaanMcu::class, 'permintaan_id', 'id_permintaan');
     }
 }

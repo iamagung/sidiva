@@ -33,7 +33,7 @@
 									 {{-- <a class="nav-link dropdown-toggle dropdown-toggle-nocaret position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> <span class="alert-count">7</span> --}}
 										  <i class='bx bx-bell'></i>
 									 </a>
-									 <div class="dropdown-menu dropdown-menu-end">
+									 {{-- <div class="dropdown-menu dropdown-menu-end">
 										  <a href="javascript:;">
 												<div class="msg-header">
 													 <p class="msg-header-title">Notifications</p>
@@ -144,14 +144,14 @@
 										  <a href="javascript:;">
 												<div class="text-center msg-footer">View All Notifications</div>
 										  </a>
-									 </div>
+									 </div> --}}
 								</li>
 								<li class="nav-item dropdown dropdown-large">
 									 <a class="nav-link" onclick="alert('Maintenance')" href="#">
 									 {{-- <a class="nav-link dropdown-toggle dropdown-toggle-nocaret position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> <span class="alert-count">8</span> --}}
 										  <i class='bx bx-comment'></i>
 									 </a>
-									 <div class="dropdown-menu dropdown-menu-end">
+									 {{-- <div class="dropdown-menu dropdown-menu-end">
 										  <a href="javascript:;">
 												<div class="msg-header">
 													 <p class="msg-header-title">Messages</p>
@@ -295,7 +295,7 @@
 										  <a href="javascript:;">
 												<div class="text-center msg-footer">View All Messages</div>
 										  </a>
-									 </div>
+									 </div> --}}
 								</li>
 						  </ul>
 					 </div>
@@ -305,14 +305,14 @@
 							<div class="user-info ps-3">
 								<p class="user-name mb-0">{{Auth::User()->name}}</p>
 								<p class="designattion mb-0">
-									@if (Auth::User()->level=='1')
+									@if (Auth::User()->level=='admin')
 										Administrator
-									@elseif (Auth::User()->level=='2')
+									@elseif (Auth::User()->level=='adminmcu')
 										Admin MCU
-									@elseif (Auth::User()->level=='3')
-										Admin Home Care
-									@elseif (Auth::User()->level=='4')
-										Admin Telemedis
+									@elseif (Auth::User()->level=='adminhomecare')
+										Admin Homecare
+									@elseif (Auth::User()->level=='admintelemedis')
+										Admin Telemedicine
 									@endif
 								</p>
 							</div>

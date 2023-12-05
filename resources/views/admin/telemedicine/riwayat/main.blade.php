@@ -14,11 +14,8 @@
 
     <!-- main content -->
     <div class="card main-layer">
-        <div class="card-header">
-            <h5>Riwayat Telemedicine</h5>
-        </div>
         <div class="card-body">
-            <div class="row" style="margin-top: 2rem">
+            <div class="row">
                 {{-- <div class="col-md-2" style="margin-top: 5px;"> --}}
                     {{-- </div> --}}
                 <div class="col-md-6 twodate">
@@ -34,11 +31,10 @@
                     </div>
                 </div>
                 {{-- <div class="col-md-3 twodate">
-                </div> --}} 
-                <div class="col-md-2">
+                </div> --}}
+                {{-- <div class="col-md-2">
                     <label>Status</label>
                     <select name="status" id="status" class="form-control">
-                        {{-- <option value="">-Pilih-</option> --}}
                         <option value="all" selected>Semua</option>
                         <option value="belum">Belum</option>
                         <option value="menunggu">Menunggu</option>
@@ -47,12 +43,14 @@
                         <option value="tolak">Tolak</option>
                         <option value="selesai">Selesai</option>
                     </select>
-                </div>
+                </div> --}}
                 <div class="col-md-4 mt-4" >
-                    <button type="button" class="btn btn-success btn-sm float-end" onclick="exportExcel()"><i class='bx bxs-file-export'></i> Export To Excel</button>
+                    {{-- <button type="button" class="btn btn-success btn-sm float-end" onclick="exportExcel()"><i class='bx bxs-file-export'></i> Export To Excel</button>
+                    <a href="{{route('exportRiwayatTelemedicine2')}}" type="button" class="btn btn-success btn-sm float-end"><i class='bx bxs-file-export'></i> Export To Excsssel</a> --}}
                 </div>
             </div>
-            <div class="row" style="margin-top: 2rem">
+            <hr>
+            <div class="row">
                 <div class="table-responsive">
                     <table id="datatabel" class="table table-striped table-bordered" width="100%">
                         <thead>
@@ -94,7 +92,7 @@
         if (month < 10) month = "0" + month;
         if (day < 10) day = "0" + day;
 
-        var today = year + "-" + month + "-" + day ;      
+        var today = year + "-" + month + "-" + day ;
         $("#min").attr("value", today);
         $("#max").attr("value", today);
         var status = $("#status").val();
@@ -107,7 +105,7 @@
     function loadTable(min = null, max = null, status = null){
         var table = $('#datatabel').DataTable({
             scrollX: true,
-            searching: true, 
+            searching: true,
             paging: true,
             processing: true,
             serverSide: true,
@@ -144,13 +142,13 @@
     }
 
     function filterByDate() {
-        $("#min").change(function (e) { 
+        $("#min").change(function (e) {
             e.preventDefault();
             $('#datatabel').DataTable().destroy();
             loadTable( $(this).val() , $("#max").val() , $("#status").val() );
         });
 
-        $("#max").change(function (e) { 
+        $("#max").change(function (e) {
             e.preventDefault();
             $('#datatabel').DataTable().destroy();
             loadTable( $("#min").val() , $(this).val() , $("#status").val() );

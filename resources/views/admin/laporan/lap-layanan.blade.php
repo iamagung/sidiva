@@ -44,21 +44,22 @@
                     <button class="nav-link" id="pills-emergency-tab" data-bs-toggle="pill" data-bs-target="#pills-emergency" type="button" role="tab" aria-controls="pills-emergency" aria-selected="false">Call Emergency</button>
                 </li>
             </ul>
-            <hr>
-            <div class="row">
-                <div class="col-md-3">
-                    <label>Bulan</label>
-                    <input type="text" name="pilih_bulan" id="pilih_bulan" class="form-control datepicker" style="display: inline-block;width: auto;text-align:center" autocomplete="off" readonly>
-                </div>
-                <div class="col-md-7"></div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-secondary btn-sm float-end" onclick="export('homecare')"><i class='bx bxs-report'></i> Export</button>
-                </div>
-            </div>
-            <hr>
             <div class="tab-content" id="pills-tabContent">
                 <!--Homecare-->
                 <div class="tab-pane fade show active" id="pills-homecare" role="tabpanel" aria-labelledby="pills-homecare-tab">
+                    
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label>Bulan</label>
+                            <input type="text" value="{{date('m-Y')}}" name="pilih_bulan_homecare" id="pilih_bulan_homecare" class="form-control datepicker" style="display: inline-block;width: auto;text-align:center" autocomplete="off" readonly>
+                        </div>
+                        <div class="col-md-7"></div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-secondary btn-sm float-end" onclick="exportLayanan('homecare')"><i class='bx bxs-report'></i> Export</button>
+                        </div>
+                    </div>
+                    <hr>
                     <div class="row">
                         <div class="col-md-12">
                             <div class="table-responsive">
@@ -85,6 +86,18 @@
                 </div>
                 <!--Telemedis-->
                 <div class="tab-pane fade" id="pills-telemedis" role="tabpanel" aria-labelledby="pills-telemedis-tab">
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label>Bulan</label>
+                            <input type="text" value="{{date('m-Y')}}" name="pilih_bulan_telemedicine" id="pilih_bulan_telemedicine" class="form-control datepicker" style="display: inline-block;width: auto;text-align:center" autocomplete="off" readonly>
+                        </div>
+                        <div class="col-md-7"></div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-secondary btn-sm float-end" onclick="exportLayanan('telemedicine')"><i class='bx bxs-report'></i> Export</button>
+                        </div>
+                    </div>
+                    <hr>
                     <div class="table-responsive">
                         <table id="datatabelTelemedicine" class="table table-striped table-bordered" width="100%">
                             <thead>
@@ -108,6 +121,18 @@
                 </div>
                 <!--MCU-->
                 <div class="tab-pane fade" id="pills-mcu" role="tabpanel" aria-labelledby="pills-mcu-tab">
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label>Bulan</label>
+                            <input type="text" value="{{date('m-Y')}}" name="pilih_bulan_mcu" id="pilih_bulan_mcu" class="form-control datepicker" style="display: inline-block;width: auto;text-align:center" autocomplete="off" readonly>
+                        </div>
+                        <div class="col-md-7"></div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-secondary btn-sm float-end" onclick="exportLayanan('mcu')"><i class='bx bxs-report'></i> Export</button>
+                        </div>
+                    </div>
+                    <hr>
                     <div class="table-responsive">
                         <table id="datatabelMcu" class="table table-striped table-bordered" width="100%">
                             <thead>
@@ -130,6 +155,18 @@
                 </div>
                 <!--Emergency-->
                 <div class="tab-pane fade" id="pills-emergency" role="tabpanel" aria-labelledby="pills-emergency-tab">
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label>Bulan</label>
+                            <input type="text" value="{{date('m-Y')}}" name="pilih_bulan" id="pilih_bulan" class="form-control datepicker" style="display: inline-block;width: auto;text-align:center" autocomplete="off" readonly>
+                        </div>
+                        <div class="col-md-7"></div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-secondary btn-sm float-end" onclick="exportLayanan('')"><i class='bx bxs-report'></i> Export</button>
+                        </div>
+                    </div>
+                    <hr>
                     <div class="table-responsive">
                         <table id="datatabel" class="table table-striped table-bordered" width="100%">
                             <thead>
@@ -164,9 +201,12 @@
             autoclose: true
         });
         var bulan = $('#pilih_bulan').val();
-        tableHomecare(bulan);
-        tableTelemedicine(bulan);
-        tableMcu(bulan);
+        var bulan_hc = $('#pilih_bulan_homecare').val();
+        var bulan_tm = $('#pilih_bulan_telemedicine').val();
+        var bulan_mcu = $('#pilih_bulan_mcu').val();
+        tableHomecare(bulan_hc);
+        tableTelemedicine(bulan_tm);
+        tableMcu(bulan_mcu);
         filterByMonth();
     });
     // DataTable Homecare
@@ -260,13 +300,38 @@
     function filterByMonth() {
         $("#pilih_bulan").change(function (e) {
 			e.preventDefault();
-            $('#datatabelHomecare').DataTable().destroy();
+		});
+        $("#pilih_bulan_telemedicine").change(function (e) {
+			e.preventDefault();
             $('#datatabelTelemedicine').DataTable().destroy();
-            $('#datatabelMcu').DataTable().destroy();
-			tableHomecare($(this).val());
             tableTelemedicine($(this).val());
+		});
+        $("#pilih_bulan_mcu").change(function (e) {
+			e.preventDefault();
+            $('#datatabelMcu').DataTable().destroy();
             tableMcu($(this).val());
 		});
+        $("#pilih_bulan_homecare").change(function (e) {
+			e.preventDefault();
+            $('#datatabelHomecare').DataTable().destroy();
+			tableHomecare($(this).val());
+		});
+    }
+
+    function exportLayanan(params) {
+        if(params == 'homecare') {
+            var bulan_lap = $('#pilih_bulan_homecare').val();
+        } else if(params == 'telemedicine') {
+            var bulan_lap = $('#pilih_bulan_telemedicine').val();
+        } else if(params == 'mcu') {
+            var bulan_lap = $('#pilih_bulan_mcu').val();
+        } else {
+            var bulan_lap = $('#pilih_bulan').val();
+        }
+        var url = "{{route('exportLayanan',[':bulan',':layanan'])}}";
+        url = url.replace(':bulan',bulan_lap);
+        url = url.replace(':layanan',params);
+        window.location = url;
     }
 </script>
 @endpush

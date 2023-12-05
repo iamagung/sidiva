@@ -18,6 +18,19 @@
     <!-- main content -->
     <div class="card main-layer">
         <div class="card-body">
+            <div class="row">
+                <div class="col-md-2" style="margin-top: 5px;">
+                    <span class="float-left">Pilih Tanggal</span>
+                </div>
+                <div class="col-md-3 twodate">
+                    <input type="date" id="min" class="form-control float-left">
+                </div>
+                <div class="col-md-3 twodate">
+                    <input type="date" id="max" class="form-control float-left">
+                </div>
+                <div class="col-md-4"></div>
+            </div>
+            <hr>
             <div class="row" style="margin-top: 2rem">
                 <div class="table-responsive">
                     <table id="datatabel" class="table table-striped table-bordered" width="100%">
@@ -29,8 +42,6 @@
                                 <td>Nama Pemesan</td>
                                 <td>Jenis MCU</td>
                                 <td>Layanan MCU</td>
-                                <td>Jumlah Pasien</td>
-                                <td>Surat Keterangan</td>
                                 <td>Pilihan Tanggal</td>
                                 <td>Status</td>
                                 <td>Tanggal Selesai</td>
@@ -62,18 +73,18 @@
         if (day < 10) day = "0" + day;
 
         var today = year + "-" + month + "-" + day ;      
-        $("#tanggal").attr("value", today);
+        $("#min").attr("value", today);
+        $("#max").attr("value", today);
 
-        loadTable(today);
+        loadTable(today , today);
         filterByDate();
 	});
 
-    function loadTable(tanggal = null){
+    function loadTable(min = null, max = null){
         var table = $('#datatabel').DataTable({
-            "dom": "<'row'<'col-sm-2'l><'col-sm-3 datesearchbox'><'col-sm-3 statusbox'><'col-sm-4'f>>" ,
             scrollX: true,
             searching: true, 
-            paging: true,   
+            paging: true,
             processing: true,
             serverSide: true,
             columnDefs: [
@@ -88,31 +99,37 @@
             ajax: {
                 url: "{{route('mainRiwayatMcu')}}",
                 data: {
-                    tanggal : tanggal
+                    min : min,
+                    max : max
                 }
             },
             columns: [
                 { data: "DT_RowIndex", name: "DT_RowIndex"},
-                { data: "tanggal_kunjungan", name: "tanggal_kunjungan"},
-                { data: "rm", name: "rm"},
+                { data: "tanggal_order", name: "tanggal_order"},
+                { data: "modifyNorm", name: "modifyNorm"},
                 { data: "nama", name: "nama"},
-                { data: "jenis_layanan", name: "jenis_layanan"},
-                { data: "nama_layanan", name: "nama_layanan"},
-                { data: "nama_layanan", name: "nama_layanan"},
-                { data: "nama_layanan", name: "nama_layanan"},
-                { data: "nama_layanan", name: "nama_layanan"},
-                { data: "nama_layanan", name: "nama_layanan"},
-                { data: "actions", name: "actions", class: "text-center"},
+                { data: "modifyJenis", name: "modifyJenis"},
+                { data: "modifyLayanan", name: "modifyLayanan"},
+                { data: "tanggal_kunjungan", name: "tanggal_kunjungan"},
+                { data: "modifyStatus", name: "modifyStatus"},
+                { data: "tanggal_kunjungan", name: "tanggal_kunjungan"}
             ],
-        });
-        $("div.datesearchbox").html('<div class="col"><div class="row mb-3"><label  class="col-sm-2 col-form-label">Tanggal</label><div class="col-sm-8"><input type="date" id="tanggal" class="form-control"></div></div></div>');
-        $("div.statusbox").html('<div class="col"><div class="row mb-3"><label  class="col-sm-2 col-form-label">Status</label><div class="col-sm-8"><select name="status" id="status" class="form-control single-select"><option value="">-Pilih-</option><option value="all">Semua</option><option value="belum">Belum</option><option value="proses">Proses</option><option value="menunggu">Menunggu</option><option value="batal">Batal</option><option value="selesai">Selesai</option></select></div>');
+        })
     }
-    $('#tanggal').change(function (e) { 
+
+    function filterByDate() {
+        $("#min").change(function (e) { 
             e.preventDefault();
             $('#datatabel').DataTable().destroy();
-            loadTable( $("#tanggal").val() );
+            loadTable( $(this).val() , $("#max").val() );
         });
+
+        $("#max").change(function (e) { 
+            e.preventDefault();
+            $('#datatabel').DataTable().destroy();
+            loadTable( $("#min").val() , $(this).val() );
+        });
+    }
         
     function downloadHasil(id) {
         alert('Maintenance')

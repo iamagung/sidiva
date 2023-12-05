@@ -54,39 +54,39 @@ class PermintaanHCController extends Controller
 			return DataTables::of($data)
 				->addIndexColumn()
 				->addColumn('opsi', function($row){
-                    // if ($row->tanggal_kunjungan!=date('Y-m-d')&&$row->status_pasien=='belum'&&$row->status_pembayaran=='pending') {
-                    //     return "
-                    //     <button class='btn btn-sm btn-primary' title='terima' onclick='terima(`$row->id_permintaan_hc`)'>Terima</button>
-                    //     <button class='btn btn-sm btn-danger' title='tolak' onclick='tolak(`$row->id_permintaan_hc`)'>Tolak</button>
-                    //     ";
-                    // } else if($row->tanggal_kunjungan==date('Y-m-d')){
-                    //     if ($row->status_pasien=='belum') {
-                    //         return "
-                    //         <button class='btn btn-sm btn-primary disabled' title='terima'>Terima</button>
-                    //         <button class='btn btn-sm btn-danger disabled' title='tolak'>Tolak</button>
-                    //         ";
-                    //     } else if($row->status_pembayaran=='paid') {
-                    //         if($row->status_pasien=='menunggu') {
-                    //             return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan_hc`)'>PILIH NAKES</button>";
-                    //         } else {
-                    //             if($row->resep_obat == '') {
-                    //                 return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button><button class='btn btn-sm btn-primary' title='eresep' onclick='detailEresep(`$row->id_permintaan_telemedicine`)'>Eresep</button>";
+                    if ($row->tanggal_kunjungan!=date('Y-m-d')&&$row->status_pasien=='belum'&&$row->status_pembayaran=='pending') {
+                        return "
+                        <button class='btn btn-sm btn-primary' title='terima' onclick='terima(`$row->id_permintaan_hc`)'>Terima</button>
+                        <button class='btn btn-sm btn-danger' title='tolak' onclick='tolak(`$row->id_permintaan_hc`)'>Tolak</button>
+                        ";
+                    } else if($row->tanggal_kunjungan==date('Y-m-d')){
+                        if ($row->status_pasien=='belum') {
+                            return "
+                            <button class='btn btn-sm btn-primary disabled' title='terima'>Terima</button>
+                            <button class='btn btn-sm btn-danger disabled' title='tolak'>Tolak</button>
+                            ";
+                        } else if($row->status_pembayaran=='paid') {
+                            if($row->status_pasien=='menunggu') {
+                                return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan_hc`)'>PILIH NAKES</button>";
+                            } else {
+                                if($row->resep_obat == '') {
+                                    return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button><button class='btn btn-sm btn-primary' title='eresep' onclick='detailEresep(`$row->id_permintaan_telemedicine`)'>Eresep</button>";
 
-                    //             } else {
-                    //                 return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button>";
-                    //             }
-                    //         }
-                    //     }
-                    // } else {
-                    //     // if($row->resep_obat == '') {
-                    //     //     return '<div class="text-center">-</div>';
-                    //     // } else {
-                    //     //     return "<button class='btn btn-sm btn-primary' title='eresep' onclick='detailEresep(`$row->id_permintaan_hc`)'>Eresep</button>";
-                    //     // }
-                    //     return '<div class="text-center">-</div>';
-                    // }
-                    return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan_hc`)'>PILIH NAKES</button>
-                    <button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button>";
+                                } else {
+                                    return "<button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button>";
+                                }
+                            }
+                        }
+                    } else {
+                        // if($row->resep_obat == '') {
+                        //     return '<div class="text-center">-</div>';
+                        // } else {
+                        //     return "<button class='btn btn-sm btn-primary' title='eresep' onclick='detailEresep(`$row->id_permintaan_hc`)'>Eresep</button>";
+                        // }
+                        return '<div class="text-center">-</div>';
+                    }
+                    // return "<button class='btn btn-sm btn-success' title='pilih nakes' onclick='pilih(`$row->id_permintaan_hc`)'>PILIH NAKES</button>
+                    // <button class='btn btn-sm btn-secondary' title='detail' onclick='detail(`$row->id_permintaan_hc`)'>DETAIL</button>";
 				})
                 ->addColumn('layanan', function($row){
                     $txt = !empty($row->listLayanan)?$row->listLayanan:'-';

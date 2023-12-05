@@ -12,6 +12,10 @@ class UsersAndroid extends Model
     protected $primaryKey = 'id_users_android';
     protected $connection = 'mysql';
 
+    public function permintaan_hc() {
+        return $this->hasMany(PermintaanHC::class, 'nik', 'nik');
+    }
+
     public function permintaan_telemedicine()
     {
         return $this->hasMany(PermintaanTelemedicine::class, 'nik', 'nik');

@@ -18,6 +18,6 @@ class JadwalTenagaMedis extends Model
      */
     public function tenagaMedis()
     {
-        return $this->belongsTo('App\Models\TenagaMedisTelemedicine', 'nakes_id', 'id_tenaga_medis');
+        return $this->belongsTo('App\Models\TenagaMedisTelemedicine', 'nakes_id', 'nakes_id');
     }
 }

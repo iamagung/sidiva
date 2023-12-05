@@ -11,7 +11,10 @@ use App\Models\PermintaanMcu;
 use App\Models\PermintaanTelemedicine;
 use App\Models\LayananPermintaanHc;
 use App\Models\LayananPermintaanMcu;
-use DataTables, DB, Auth;
+use App\Exports\LaporanLayananHomecareExport;
+use App\Exports\LaporanLayananTelemedicineExport;
+use App\Exports\LaporanLayananMcuExport;
+use DataTables, DB, Auth, Excel;
 
 class LaporanLayananController extends Controller
 {
@@ -23,6 +26,22 @@ class LaporanLayananController extends Controller
         $data['title'] = $this->title;
         return view('admin.laporan.lap-layanan', $data);
     }
+
+    public function exportLaporanLayanan(Request $request) {
+        $bulan = substr($request->bulan,0,2);
+        $tahun = substr($request->bulan,3,7);
+
+        if ($request->jenis == 'homecare') {
+            return Excel::download(new LaporanLayananHomecareExport($bulan, $tahun), "Laporan Keuangan Homecare $bulan - $tahun.xlsx");
+        } else if ($request->jenis == 'telemedicine') {
+            return Excel::download(new LaporanLayananTelemedicineExport($bulan, $tahun), "Laporan Keuangan Telemedicine $bulan - $tahun.xlsx");
+        } else if ($request->jenis == 'mcu') {
+            return Excel::download(new LaporanLayananMcuExport($bulan, $tahun), "Laporan Keuangan Medical Check Up $bulan - $tahun.xlsx");            
+        } else {
+            return Excel::download(new LaporanLayananTelemedicineExport($bulan, $tahun), "Laporan Keuangan Homecare $bulan - $tahun.xlsx");
+        }
+    }
+
     #Datatable homecare
     public function datatableHomecare(Request $request) {
         if ($request->ajax()) {

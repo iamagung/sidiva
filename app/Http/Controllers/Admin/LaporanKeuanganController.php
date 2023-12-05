@@ -14,7 +14,10 @@ use App\Models\LayananPermintaanMcu;
 use App\Models\PaymentPermintaan;
 use App\Models\DBRANAP\Users as UserRanap;
 use App\Models\DBRSUD\TmPoli as PoliRsu;
-use DataTables, DB, Auth;
+use App\Exports\LaporanKeuanganHomecare;
+use App\Exports\LaporanKeuanganTelemedicine;
+use App\Exports\LaporanKeuanganMcu;
+use DataTables, DB, Auth, Excel;
 
 class LaporanKeuanganController extends Controller
 {
@@ -26,6 +29,19 @@ class LaporanKeuanganController extends Controller
         $data['title'] = $this->title;
         return view('admin.laporan.lap-keuangan', $data);
     }
+
+    public function exportKeuangan($bulan_awal,$bulan_akhir,$layanan) {
+        $awal = date('Y-m-d', strtotime("01-".$bulan_awal));
+        $akhir = date('Y-m-d', strtotime("31-".$bulan_akhir));
+        if($layanan=='homecare'){
+            return Excel::download(new LaporanKeuanganHomecare($awal, $akhir), "Laporan Keuangan Homecare $awal sampai $akhir.xlsx");
+        } else if ($layanan=='telemedicine') {
+            return Excel::download(new LaporanKeuanganTelemedicine($awal, $akhir), "Laporan Keuangan Telemedicine $awal sampai $akhir.xlsx");
+        } else {
+            return Excel::download(new LaporanKeuanganMcu($awal, $akhir), "Laporan Keuangan Medical Check Up $awal sampai $akhir.xlsx");
+        }
+    }
+
     #Datatable homecare
     public function datatableHomecareKeuangan(Request $request) {
         if ($request->ajax()) {
@@ -67,7 +83,11 @@ class LaporanKeuanganController extends Controller
                 ->where('payment_permintaan.jenis_layanan','homecare')
                 ->orderBy('pc.id_permintaan_hc','DESC')->get();
             }
+            $subtotal = 0;
             foreach ($data as $k => $v) {
+                if(in_array($v->status,['PAID','SETTLED'])){
+                    $subtotal += $v->nominal;
+                }
                 $layanan = LayananPermintaanHc::where('permintaan_id', $v->id_permintaan_hc)->get();
                 foreach ($layanan as $key => $val) {
                     $namaLayanan = LayananHC::where('id_layanan_hc', $val->layanan_id)->first();
@@ -112,6 +132,10 @@ class LaporanKeuanganController extends Controller
                 }
                 return $text;
             })
+            ->addColumn('total', function($row) use($subtotal) {
+                return "Rp. " . number_format($subtotal, 2, ",", ".");
+            })
+            ->with('total')
             ->toJson();
 		}
         return view('admin.laporan.lap-keuangan', $data);
@@ -171,11 +195,17 @@ class LaporanKeuanganController extends Controller
             }
             // return$data;
             // return$telemedicine = $data->where('diantar','ya')->whereIn('status',['PAID','SETTLED']);
-            // $subtotal = 0;
-            // foreach ($telemedicine as $te) {
-            //     $sum = (int)$te->nominal+(int)$te->ongkos_kirim;
-            //     $subtotal += $sum;
-            // }
+            $subtotal = 0;
+            foreach ($data as $te) {
+                if(in_array($te->status,['PAID','SETTLED'])) {
+                    if ($te->diantar == 'ya' && $te->jenis_layanan == 'eresep_telemedicine') {
+                        $sum = (int)$te->nominal+(int)$te->ongkos_kirim;
+                    } else {
+                        $sum = (int)$te->nominal;
+                    }
+                    $subtotal += $sum;
+                }
+            }
             // return $subtotal;
             return DataTables::of($data)
             ->addIndexColumn()
@@ -218,23 +248,31 @@ class LaporanKeuanganController extends Controller
                 return $txt;
             })
             ->addColumn('modifyTagihan', function($row){
-                $tagihan = $row->nominal+$row->ongkos_kirim;
+                if ($row->diantar == 'ya' && $row->jenis_layanan == 'eresep_telemedicine') {
+                    $tagihan = (int)$row->nominal+(int)$row->ongkos_kirim;
+                } else {
+                    $tagihan = (int)$row->nominal;
+                }
                 $text = "Rp. " . number_format($tagihan, 2, ",", ".");
                 return $text;
             })
             ->addColumn('modifyTerbayarkan', function($row){
-                $tagihan = $row->nominal+$row->ongkos_kirim;
                 if (in_array($row->status,['SETTLED','PAID'])) {
+                    if ($row->diantar == 'ya' && $row->jenis_layanan == 'eresep_telemedicine') {
+                        $tagihan = (int)$row->nominal+(int)$row->ongkos_kirim;
+                    } else {
+                        $tagihan = (int)$row->nominal;
+                    }
                     $text = "Rp. " . number_format($tagihan, 2, ",", ".");
                 } else {
                     $text = "Rp. " . number_format("0", 2, ",", ".");
                 }
                 return $text;
             })
-            // ->addColumn('tes', function($row){
-            //     return "Rp. 1.000.000,00";
-            // })
-            // ->with('test', )
+            ->addColumn('tes', function($row) use($subtotal) {
+                return "Rp. " . number_format($subtotal, 2, ",", ".");
+            })
+            ->with('test', )
             ->toJson();
 		}
         return view('admin.laporan.lap-keuangan', $data);
@@ -282,7 +320,11 @@ class LaporanKeuanganController extends Controller
                 ->where('payment_permintaan.jenis_layanan','mcu')
                 ->orderBy('pu.id_permintaan','DESC')->get();
             }
+            $subtotal = 0;
             foreach ($data as $k => $v) {
+                if(in_array($v->status, ['PAID','SETTLED'])){
+                    $subtotal += $v->nominal;
+                }
                 $layanan = LayananPermintaanMcu::where('permintaan_id', $v->id_permintaan)->get();
                 foreach ($layanan as $key => $val) {
                     $namaLayanan = LayananMcu::where('id_layanan', $val->layanan_id)->first();
@@ -331,6 +373,10 @@ class LaporanKeuanganController extends Controller
                 }
                 return $text;
             })
+            ->addColumn('total', function($row) use($subtotal) {
+                return "Rp. " . number_format($subtotal, 2, ",", ".");
+            })
+            ->with('total')
             ->toJson();
 		}
         return view('admin.laporan.lap-keuangan', $data);
